@@ -21,11 +21,15 @@ class _SplashScreenState extends State<SplashScreen> {
       systemNavigationBarIconBrightness: Brightness.dark,
     ));
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 1500), () {
+      Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const AuthScreen(),
+            PageRouteBuilder(
+              transitionDuration: const Duration(milliseconds: 350),
+              pageBuilder: (context, animation, _) => const AuthScreen(),
+              transitionsBuilder: (context, animation, _, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
             ),
           );
         }
