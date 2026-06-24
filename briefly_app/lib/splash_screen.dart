@@ -21,7 +21,7 @@ class _SplashScreenState extends State<SplashScreen> {
       systemNavigationBarIconBrightness: Brightness.dark,
     ));
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 600), () {
+      Future.delayed(const Duration(milliseconds: 1000), () {
         if (mounted) {
           Navigator.of(context).pushReplacement(
             PageRouteBuilder(
