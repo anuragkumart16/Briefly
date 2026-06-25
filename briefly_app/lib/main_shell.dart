@@ -8,6 +8,7 @@ import 'home_screen.dart';
 import 'settings_screen.dart';
 import 'widgets/app_bottom_nav_bar.dart';
 import 'widgets/app_top_bar.dart';
+import 'widgets/account_bottom_sheet.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -32,6 +33,15 @@ class _MainShellState extends State<MainShell> {
   bool _floatsEnabled = true;
   bool _sendFloatsSilent = true;
   int _floatsFrequencyHours = 2;
+
+  // User profile details
+  String _userName = 'Anurag';
+  String _userEmail = 'anuragkumartiwari12@gmail.com';
+
+  String get _userInitials {
+    if (_userName.isEmpty) return 'A';
+    return _userName[0].toUpperCase();
+  }
 
   @override
   void initState() {
@@ -58,6 +68,8 @@ class _MainShellState extends State<MainShell> {
     final floatsEnabled = prefs.getBool('floats_enabled') ?? true;
     final sendFloatsSilent = prefs.getBool('send_floats_silent') ?? true;
     final floatsFrequencyHours = prefs.getInt('floats_frequency_hours') ?? 2;
+    final name = prefs.getString('user_name') ?? 'Anurag';
+    final email = prefs.getString('user_email') ?? 'anuragkumartiwari12@gmail.com';
     if (mounted) {
       setState(() {
         if (hour != null && minute != null) {
@@ -66,6 +78,8 @@ class _MainShellState extends State<MainShell> {
         _floatsEnabled = floatsEnabled;
         _sendFloatsSilent = sendFloatsSilent;
         _floatsFrequencyHours = floatsFrequencyHours;
+        _userName = name;
+        _userEmail = email;
       });
     }
   }
@@ -653,9 +667,37 @@ class _MainShellState extends State<MainShell> {
       backgroundColor: Colors.white,
       appBar: AppTopBar(
         title: 'Briefly',
+        userInitials: _userInitials,
         onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
         onAccountTap: () {
-          // TODO: Navigate to account/profile screen
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (sheetContext) {
+              return AccountBottomSheet(
+                userName: _userName,
+                userEmail: _userEmail,
+                onSettingsTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  ).then((_) async {
+                    await _loadSavedTime();
+                    if (!_floatsEnabled && _selectedIndex == 1) {
+                      setState(() => _selectedIndex = 0);
+                      _pageController.animateToPage(
+                        0,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  });
+                },
+              );
+            },
+          );
         },
         // Switch to search mode on Floats tab
         searchController: _selectedIndex == 1 ? _floatsSearchController : null,
@@ -721,10 +763,10 @@ class _MainShellState extends State<MainShell> {
                             end: Alignment.bottomRight,
                           ),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            'A',
-                            style: TextStyle(
+                            _userInitials,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 22,
                               fontWeight: FontWeight.w500,
@@ -738,9 +780,9 @@ class _MainShellState extends State<MainShell> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Anurag',
-                              style: TextStyle(
+                            Text(
+                              _userName,
+                              style: const TextStyle(
                                 fontFamily: 'Open Sans',
                                 fontSize: 18,
                                 fontWeight: FontWeight.w500,
@@ -749,9 +791,9 @@ class _MainShellState extends State<MainShell> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'anuragkumartiwari12@gmail.com',
+                              _userEmail,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontFamily: 'Open Sans',
                                 fontSize: 12,
                                 color: Color(0xFF606060),

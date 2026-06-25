@@ -25,6 +25,9 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   /// Whether to show a back button instead of menu.
   final bool showBackButton;
 
+  /// Optional user initials to show in the account avatar.
+  final String? userInitials;
+
   const AppTopBar({
     super.key,
     required this.title,
@@ -34,6 +37,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.onSearchChanged,
     this.trailingWidget,
     this.showBackButton = false,
+    this.userInitials,
   });
 
   bool get _isSearchMode => searchController != null;
@@ -112,18 +116,54 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
           padding: const EdgeInsets.only(right: 12),
           child: GestureDetector(
             onTap: onAccountTap,
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFFF5B24), width: 1.8),
-              ),
-              child: const Icon(
-                Icons.person_outline,
-                color: Color(0xFFFF5B24),
-                size: 20,
-              ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF8A65), Color(0xFFFF5B24)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    border: Border.all(color: Colors.white, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF5B24).withValues(alpha: 0.25),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      userInitials ?? 'A',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Open Sans',
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: -1,
+                  bottom: -1,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CAF50), // Active sync green
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

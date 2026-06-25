@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_screen.dart';
 import 'widgets/app_top_bar.dart';
+import 'widgets/account_bottom_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -33,6 +34,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Account details (Read-only as per instructions, taken from auth)
   String _name = 'Anurag';
   String _email = 'anuragkumartiwari12@gmail.com';
+
+  String get _userInitials {
+    if (_name.isEmpty) return 'A';
+    return _name[0].toUpperCase();
+  }
 
   @override
   void initState() {
@@ -507,7 +513,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppTopBar(
         title: 'Settings',
         showBackButton: true,
-        onAccountTap: () {},
+        userInitials: _userInitials,
+        onAccountTap: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (sheetContext) {
+              return AccountBottomSheet(
+                userName: _name,
+                userEmail: _email,
+                onSettingsTap: () {
+                  // Already on settings screen
+                },
+              );
+            },
+          );
+        },
       ),
       body: SafeArea(
         child: SingleChildScrollView(
