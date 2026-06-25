@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'auth_screen.dart';
+import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -26,7 +26,7 @@ class _SplashScreenState extends State<SplashScreen> {
           Navigator.of(context).pushReplacement(
             PageRouteBuilder(
               transitionDuration: const Duration(milliseconds: 350),
-              pageBuilder: (context, animation, _) => const AuthScreen(),
+              pageBuilder: (context, animation, _) => const OnboardingScreen(),
               transitionsBuilder: (context, animation, _, child) {
                 return FadeTransition(opacity: animation, child: child);
               },

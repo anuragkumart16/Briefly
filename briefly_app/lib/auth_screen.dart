@@ -188,7 +188,7 @@ class _AuthScreenState extends State<AuthScreen> {
               const Spacer(),
               // Continue with Google Button
               Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
+                padding: const EdgeInsets.only(bottom: 20.0),
                 child: SizedBox(
                   width: double.infinity,
                   height: 56,
