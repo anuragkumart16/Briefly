@@ -12,15 +12,7 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
 
-  // Frequency options
-  final List<String> _frequencies = [
-    'Every Hour',
-    'Every Two Hours',
-    'Every Four Hours',
-    'Every Six Hours',
-    'Once a Day',
-  ];
-  String _selectedFrequency = 'Every Two Hours';
+  int _selectedHours = 2;
 
   final List<_FloatsPageData> _pages = const [
     _FloatsPageData(
@@ -47,7 +39,7 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
   void _goToFloats() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('floats_onboarding_done', true);
-    await prefs.setString('floats_frequency', _selectedFrequency);
+    await prefs.setInt('floats_frequency_hours', _selectedHours);
     if (!mounted) return;
     Navigator.of(context).pop(); // Returns to MainShell which switches to Floats tab
   }
@@ -146,27 +138,38 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
                             height: 1.5,
                           ),
                         ),
-                        const SizedBox(height: 40),
 
-                        // Icon illustration
-                        Container(
-                          width: 96,
-                          height: 96,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF0EB),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            page.icon,
-                            size: 48,
-                            color: const Color(0xFFFF5B24),
-                          ),
-                        ),
 
-                        // Frequency picker (last page only)
+                        // Frequency display (last page only)
                         if (page.showFrequencyPicker) ...[
                           const SizedBox(height: 36),
-                          _buildFrequencyPicker(),
+                          GestureDetector(
+                            onTap: _showFrequencySheet,
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF7F7F7),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Every $_selectedHours ${_selectedHours == 1 ? 'Hour' : 'Hours'}',
+                                    style: const TextStyle(
+                                      fontFamily: 'Open Sans',
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF222222),
+                                    ),
+                                  ),
+                                  const Icon(Icons.expand_more_rounded,
+                                      color: Color(0xFFFF5B24), size: 24),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -175,13 +178,9 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
               ),
             ),
 
-            // Bottom bar
-            Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFFFF7F55),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            // Bottom buttons
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -192,6 +191,7 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
                   _NavButton(
                     label: isLast ? 'Get Started' : 'Next',
                     onPressed: _nextPage,
+                    isPrimary: true,
                   ),
                 ],
               ),
@@ -202,87 +202,170 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
     );
   }
 
-  Widget _buildFrequencyPicker() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'How frequently would you like to be reminded?',
-            style: TextStyle(
-              fontFamily: 'Open Sans',
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF222222),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ..._frequencies.map((freq) => _FrequencyOption(
-                label: freq,
-                isSelected: _selectedFrequency == freq,
-                onTap: () => setState(() => _selectedFrequency = freq),
-              )),
-        ],
-      ),
+  void _showFrequencySheet() {
+    int tempHours = _selectedHours;
+    final FixedExtentScrollController wheelController =
+        FixedExtentScrollController(initialItem: tempHours - 1);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Handle
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEEEEEE),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'How often?',
+                    style: TextStyle(
+                      fontFamily: 'Open Sans',
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFFF5B24),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Choose how frequently you want to receive your Floats.',
+                    style: TextStyle(
+                      fontFamily: 'Open Sans',
+                      fontSize: 13,
+                      color: Color(0xFF888888),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Wheel row: "Every [wheel] Hours"
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Every',
+                        style: TextStyle(
+                          fontFamily: 'Open Sans',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF222222),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Container(
+                        width: 80,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF7F7F7),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: ListWheelScrollView.useDelegate(
+                          controller: wheelController,
+                          itemExtent: 44,
+                          perspective: 0.003,
+                          diameterRatio: 1.6,
+                          physics: const FixedExtentScrollPhysics(),
+                          onSelectedItemChanged: (index) {
+                            setSheetState(() => tempHours = index + 1);
+                          },
+                          childDelegate: ListWheelChildBuilderDelegate(
+                            builder: (context, index) {
+                              final isSelected = tempHours == index + 1;
+                              return Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: TextStyle(
+                                    fontFamily: 'Open Sans',
+                                    fontSize: 22,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w400,
+                                    color: isSelected
+                                        ? const Color(0xFFFF5B24)
+                                        : const Color(0xFFAAAAAA),
+                                  ),
+                                ),
+                              );
+                            },
+                            childCount: 24,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      SizedBox(
+                        width: 72,
+                        child: Text(
+                          tempHours == 1 ? 'Hour' : 'Hours',
+                          style: const TextStyle(
+                            fontFamily: 'Open Sans',
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF222222),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Continue button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() => _selectedHours = tempHours);
+                        Navigator.pop(ctx);
+                        _goToFloats();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF5B24),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text(
+                        'Continue',
+                        style: TextStyle(
+                          fontFamily: 'Open Sans',
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
 
-class _FrequencyOption extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
 
-  const _FrequencyOption({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFF5B24) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? const Color(0xFFFF5B24) : const Color(0xFFEEEEEE),
-            width: 1.5,
-          ),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'Open Sans',
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : const Color(0xFF444444),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _FloatsPageData {
   final String description;
@@ -300,42 +383,69 @@ class _NavButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
   final bool isPrevious;
+  final bool isPrimary;
 
   const _NavButton({
     required this.label,
     required this.onPressed,
     this.isPrevious = false,
+    this.isPrimary = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (isPrimary) {
+      // Solid orange pill for Next / Get Started
+      return ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFFF5B24),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Open Sans',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+          ],
+        ),
+      );
+    }
+
+    // Ghost style for Previous
     return TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFFFF5B24),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (isPrevious) ...[
-            const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 16),
-            const SizedBox(width: 6),
-          ],
+          const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFFF5B24), size: 16),
+          const SizedBox(width: 6),
           Text(
             label,
             style: const TextStyle(
               fontFamily: 'Open Sans',
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: Color(0xFFFF5B24),
             ),
           ),
-          if (!isPrevious) ...[
-            const SizedBox(width: 6),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
-          ],
         ],
       ),
     );

@@ -135,13 +135,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
 
-            // Bottom bar with Previous / Next buttons
-            Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFFFF7F55),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            // Bottom buttons
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -152,6 +148,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   _BottomButton(
                     label: _currentPage == _pages.length - 1 ? 'Get Started' : 'Next',
                     onPressed: _nextPage,
+                    isPrimary: true,
                   ),
                 ],
               ),
@@ -174,44 +171,67 @@ class _BottomButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
   final bool isPrevious;
+  final bool isPrimary;
 
   const _BottomButton({
     required this.label,
     required this.onPressed,
     this.isPrevious = false,
+    this.isPrimary = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (isPrimary) {
+      return ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFFF5B24),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Open Sans',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+          ],
+        ),
+      );
+    }
+
     return TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFFFF5B24),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (isPrevious) ...[
-            const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 16),
-            const SizedBox(width: 6),
-          ],
+          const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFFF5B24), size: 16),
+          const SizedBox(width: 6),
           Text(
             label,
             style: const TextStyle(
               fontFamily: 'Open Sans',
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: Color(0xFFFF5B24),
             ),
           ),
-          if (!isPrevious) ...[
-            const SizedBox(width: 6),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
-          ],
         ],
       ),
     );

@@ -17,6 +17,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
+  final PageController _pageController = PageController();
 
   final GlobalKey<FloatsBodyState> _floatsBodyKey = GlobalKey<FloatsBodyState>();
 
@@ -114,23 +115,30 @@ class _MainShellState extends State<MainShell> {
 
   Future<void> _onTabTapped(int index) async {
     if (index == 1) {
-      // Floats: check onboarding first
-      final prefs = await SharedPreferences.getInstance();
-      final done = prefs.getBool('floats_onboarding_done') ?? false;
-      if (!done && mounted) {
-        await Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const FloatsOnboardingScreen()),
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const FloatsOnboardingScreen()),
+      );
+      if (mounted) {
+        setState(() => _selectedIndex = 1);
+        _pageController.animateToPage(
+          1,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeInOut,
         );
-        // After onboarding completes, switch to Floats tab
-        if (mounted) setState(() => _selectedIndex = 1);
-        return;
       }
+      return;
     }
     setState(() => _selectedIndex = index);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
   void dispose() {
+    _pageController.dispose();
     _floatsSearchController.dispose();
     super.dispose();
   }
@@ -153,23 +161,28 @@ class _MainShellState extends State<MainShell> {
             : null,
       ),
       drawer: _buildDrawer(),
-      body: IndexedStack(
-        index: _selectedIndex,
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
         children: [
           // Tab 0: Report
-          const HomeBody(),
+          const _KeepAlive(child: HomeBody()),
           // Tab 1: Floats
-          FloatsBody(
-            key: _floatsBodyKey,
-            searchController: _floatsSearchController,
-            searchQuery: _floatsSearchQuery,
-            onSearchChanged: (v) => setState(() => _floatsSearchQuery = v),
+          _KeepAlive(
+            child: FloatsBody(
+              key: _floatsBodyKey,
+              searchController: _floatsSearchController,
+              searchQuery: _floatsSearchQuery,
+              onSearchChanged: (v) => setState(() => _floatsSearchQuery = v),
+            ),
           ),
           // Tab 2: Settings (stub)
-          const Center(
-            child: Text(
-              'Settings coming soon.',
-              style: TextStyle(fontFamily: 'Open Sans', fontSize: 16, color: Color(0xFF888888)),
+          const _KeepAlive(
+            child: Center(
+              child: Text(
+                'Settings coming soon.',
+                style: TextStyle(fontFamily: 'Open Sans', fontSize: 16, color: Color(0xFF888888)),
+              ),
             ),
           ),
         ],
@@ -316,5 +329,25 @@ class _MainShellState extends State<MainShell> {
         ),
       ),
     );
+  }
+}
+
+/// Keeps a PageView child alive in memory even when it's not the current page.
+class _KeepAlive extends StatefulWidget {
+  final Widget child;
+  const _KeepAlive({required this.child});
+
+  @override
+  State<_KeepAlive> createState() => _KeepAliveState();
+}
+
+class _KeepAliveState extends State<_KeepAlive> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

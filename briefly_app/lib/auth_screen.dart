@@ -42,34 +42,46 @@ class _AuthScreenState extends State<AuthScreen> {
           builder: (context, setSheetState) {
             return Container(
               decoration: const BoxDecoration(
-                color: Color(0xFFFF7F55),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Handle bar
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'What time would you like to receive the report?',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'Open Sans',
-                      fontSize: 17,
-                      color: Colors.white,
-                      height: 1.4,
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEEEEEE),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
+                  const Text(
+                    'Set Report Time',
+                    style: TextStyle(
+                      fontFamily: 'Open Sans',
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFFF5B24),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'What time would you like to receive your daily report?',
+                    style: TextStyle(
+                      fontFamily: 'Open Sans',
+                      fontSize: 13,
+                      color: Color(0xFF888888),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   // Time display — tappable
                   GestureDetector(
                     onTap: () async {
@@ -80,12 +92,12 @@ class _AuthScreenState extends State<AuthScreen> {
                           return Theme(
                             data: Theme.of(context).copyWith(
                               colorScheme: const ColorScheme.light(
-                                primary: Color(0xFFFF7F55),
+                                primary: Color(0xFFFF5B24),
                                 onSurface: Colors.black87,
                               ),
                               textButtonTheme: TextButtonThemeData(
                                 style: TextButton.styleFrom(
-                                    foregroundColor: const Color(0xFFFF7F55)),
+                                    foregroundColor: const Color(0xFFFF5B24)),
                               ),
                             ),
                             child: child!,
@@ -98,43 +110,55 @@ class _AuthScreenState extends State<AuthScreen> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        color: const Color(0xFFF7F7F7),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Text(
-                        _formattedTime(_selectedTime),
-                        style: const TextStyle(
-                          fontFamily: 'Open Sans',
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _formattedTime(_selectedTime),
+                            style: const TextStyle(
+                              fontFamily: 'Open Sans',
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF222222),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.access_time_rounded,
+                            color: Color(0xFFFF5B24),
+                            size: 22,
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   // Continue button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _saveAndContinue,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black87,
+                        backgroundColor: const Color(0xFFFF5B24),
+                        foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                       child: const Text(
                         'Continue',
                         style: TextStyle(
                           fontFamily: 'Open Sans',
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -147,6 +171,7 @@ class _AuthScreenState extends State<AuthScreen> {
       },
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
