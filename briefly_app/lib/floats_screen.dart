@@ -68,7 +68,7 @@ class FloatsBodyState extends State<FloatsBody> {
               const Text(
                 'Add a Float',
                 style: TextStyle(
-                  fontFamily: 'Arya',
+                  fontFamily: 'Open Sans',
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFFFF5B24),
