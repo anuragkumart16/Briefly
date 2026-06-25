@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _SplashScreenState extends State<SplashScreen> {
       systemNavigationBarColor: Colors.white,
       systemNavigationBarIconBrightness: Brightness.dark,
     ));
+    _resetOnboarding();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 1000), () {
         if (mounted) {
@@ -35,6 +37,12 @@ class _SplashScreenState extends State<SplashScreen> {
         }
       });
     });
+  }
+
+  Future<void> _resetOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('floats_onboarding_done', false);
+    await prefs.setBool('time_saved', false);
   }
 
   @override

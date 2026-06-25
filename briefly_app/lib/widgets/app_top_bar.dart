@@ -56,6 +56,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
       backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
       leading: showBackButton
