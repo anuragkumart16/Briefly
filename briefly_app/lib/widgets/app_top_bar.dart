@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Shared top app bar used across all screens.
 ///
@@ -43,6 +44,13 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      systemOverlayStyle: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
       backgroundColor: Colors.white,
       elevation: 0,
       centerTitle: true,
@@ -65,6 +73,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
               child: TextField(
                 controller: searchController,
                 onChanged: onSearchChanged,
+                textAlignVertical: TextAlignVertical.center,
                 style: const TextStyle(
                   fontFamily: 'Open Sans',
                   fontSize: 14,
@@ -79,7 +88,8 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                   prefixIcon: Icon(Icons.search, color: Color(0xFFAAAAAA), size: 20),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: EdgeInsets.only(right: 12),
+                  isDense: true,
                 ),
               ),
             )

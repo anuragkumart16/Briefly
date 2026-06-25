@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FloatsOnboardingScreen extends StatefulWidget {
@@ -11,6 +12,18 @@ class FloatsOnboardingScreen extends StatefulWidget {
 class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ));
+  }
 
   int _selectedHours = 2;
 
