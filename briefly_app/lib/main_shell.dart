@@ -31,7 +31,6 @@ class _MainShellState extends State<MainShell> {
   // Report time state (owned here so drawer can be in the shell)
   TimeOfDay _selectedTime = const TimeOfDay(hour: 20, minute: 0);
   bool _floatsEnabled = true;
-  bool _sendFloatsSilent = true;
   int _floatsFrequencyHours = 2;
 
   // User profile details
@@ -66,7 +65,6 @@ class _MainShellState extends State<MainShell> {
     final hour = prefs.getInt('report_hour');
     final minute = prefs.getInt('report_minute');
     final floatsEnabled = prefs.getBool('floats_enabled') ?? true;
-    final sendFloatsSilent = prefs.getBool('send_floats_silent') ?? true;
     final floatsFrequencyHours = prefs.getInt('floats_frequency_hours') ?? 2;
     final name = prefs.getString('user_name') ?? 'Anurag';
     final email = prefs.getString('user_email') ?? 'anuragkumartiwari12@gmail.com';
@@ -76,7 +74,6 @@ class _MainShellState extends State<MainShell> {
           _selectedTime = TimeOfDay(hour: hour, minute: minute);
         }
         _floatsEnabled = floatsEnabled;
-        _sendFloatsSilent = sendFloatsSilent;
         _floatsFrequencyHours = floatsFrequencyHours;
         _userName = name;
         _userEmail = email;
@@ -84,69 +81,7 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
-  Future<void> _saveTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('report_hour', _selectedTime.hour);
-    await prefs.setInt('report_minute', _selectedTime.minute);
-    await prefs.setBool('time_saved', true);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Report time saved: ${_formattedTime(_selectedTime)}',
-            style: const TextStyle(fontFamily: 'Open Sans'),
-          ),
-          backgroundColor: const Color(0xFFFF7F55),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-    }
-  }
 
-  Future<void> _pickTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFFFF7F55),
-              onSurface: Colors.black87,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFFFF7F55)),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() => _selectedTime = picked);
-      _saveTime();
-    }
-  }
-
-  String _formattedTime(TimeOfDay t) {
-    final hour = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
-    final minute = t.minute.toString().padLeft(2, '0');
-    final period = t.period == DayPeriod.am ? 'AM' : 'PM';
-    return '$hour : $minute $period';
-  }
-
-  String _getNextFloatTimeString() {
-    if (!_floatsEnabled) return 'Disabled';
-    final now = DateTime.now();
-    final next = now.add(Duration(hours: _floatsFrequencyHours));
-    final hour24 = next.hour;
-    final period = hour24 >= 12 ? 'PM' : 'AM';
-    var hourOfPeriod = hour24 % 12;
-    if (hourOfPeriod == 0) hourOfPeriod = 12;
-    final minuteStr = next.minute.toString().padLeft(2, '0');
-    return '$hourOfPeriod:$minuteStr $period';
-  }
 
   Future<void> _onTabTapped(int index) async {
     if (index == 1) {
@@ -381,164 +316,7 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  void _showFrequencySheet() {
-    int tempHours = _floatsFrequencyHours;
-    final FixedExtentScrollController wheelController =
-        FixedExtentScrollController(initialItem: tempHours - 1);
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEEEEEE),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'How often?',
-                    style: TextStyle(
-                      fontFamily: 'Open Sans',
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFFFF5B24),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Choose how frequently you want to receive your Floats.',
-                    style: TextStyle(
-                      fontFamily: 'Open Sans',
-                      fontSize: 13,
-                      color: Color(0xFF888888),
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Every',
-                        style: TextStyle(
-                          fontFamily: 'Open Sans',
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF222222),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Container(
-                        width: 80,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF7F7F7),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: ListWheelScrollView.useDelegate(
-                          controller: wheelController,
-                          itemExtent: 44,
-                          perspective: 0.003,
-                          diameterRatio: 1.6,
-                          physics: const FixedExtentScrollPhysics(),
-                          onSelectedItemChanged: (index) {
-                            setSheetState(() => tempHours = index + 1);
-                          },
-                          childDelegate: ListWheelChildBuilderDelegate(
-                            builder: (context, index) {
-                              final isSelected = tempHours == index + 1;
-                              return Center(
-                                child: Text(
-                                  '${index + 1}',
-                                  style: TextStyle(
-                                    fontFamily: 'Open Sans',
-                                    fontSize: 22,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w700
-                                        : FontWeight.w400,
-                                    color: isSelected
-                                        ? const Color(0xFFFF5B24)
-                                        : const Color(0xFFAAAAAA),
-                                  ),
-                                ),
-                              );
-                            },
-                            childCount: 24,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      SizedBox(
-                        width: 72,
-                        child: Text(
-                          tempHours == 1 ? 'Hour' : 'Hours',
-                          style: const TextStyle(
-                            fontFamily: 'Open Sans',
-                            fontSize: 22,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF222222),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        setState(() => _floatsFrequencyHours = tempHours);
-                        Navigator.pop(ctx);
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setInt('floats_frequency_hours', tempHours);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF5B24),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Text(
-                        'Confirm',
-                        style: TextStyle(
-                          fontFamily: 'Open Sans',
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 
   void _confirmLogout() {
     showDialog(
@@ -626,33 +404,7 @@ class _MainShellState extends State<MainShell> {
       ),
     );
   }
-  Widget _buildDrawerSwitchRow(String label, bool value, ValueChanged<bool> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'Open Sans',
-              fontSize: 14,
-              fontWeight: FontWeight.normal,
-              color: Color(0xFF222222),
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: Colors.white,
-            activeTrackColor: const Color(0xFFFF5B24),
-            inactiveThumbColor: Colors.white,
-            inactiveTrackColor: const Color(0xFFE0E0E0),
-          ),
-        ],
-      ),
-    );
-  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -909,174 +661,7 @@ class _MainShellState extends State<MainShell> {
                       _showHelpDialog();
                     },
                   ),
-                  const SizedBox(height: 24),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'QUICK TOGGLES',
-                      style: TextStyle(
-                        fontFamily: 'Open Sans',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      children: [
-                        _buildDrawerSwitchRow('Float Delivery', _floatsEnabled, (val) async {
-                          setState(() {
-                            _floatsEnabled = val;
-                            if (!val && _selectedIndex == 1) {
-                              _selectedIndex = 0;
-                              _pageController.animateToPage(
-                                0,
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
-                            }
-                          });
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.setBool('floats_enabled', val);
-                        }),
-                        _buildDrawerSwitchRow('Silent Hours Delivery', _sendFloatsSilent, (val) async {
-                          setState(() => _sendFloatsSilent = val);
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.setBool('send_floats_silent', val);
-                        }),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'DELIVERY SCHEDULE',
-                      style: TextStyle(
-                        fontFamily: 'Open Sans',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F7FA),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        GestureDetector(
-                          onTap: _pickTime,
-                          behavior: HitTestBehavior.opaque,
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.access_time_rounded,
-                                color: Color(0xFF606060),
-                                size: 22,
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Daily Report',
-                                      style: TextStyle(
-                                        fontFamily: 'Open Sans',
-                                        fontSize: 12,
-                                        color: Color(0xFF888888),
-                                        fontWeight: FontWeight.normal,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      _formattedTime(_selectedTime),
-                                      style: const TextStyle(
-                                        fontFamily: 'Open Sans',
-                                        fontSize: 15,
-                                        color: Color(0xFF222222),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(
-                                Icons.edit_rounded,
-                                color: Color(0xFFFF5B24),
-                                size: 16,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Divider(color: Color(0xFFE5E7EB), height: 1),
-                        ),
-                        GestureDetector(
-                          onTap: _floatsEnabled ? _showFrequencySheet : null,
-                          behavior: HitTestBehavior.opaque,
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.layers_outlined,
-                                color: Color(0xFF606060),
-                                size: 22,
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Next Float Reminder',
-                                      style: TextStyle(
-                                        fontFamily: 'Open Sans',
-                                        fontSize: 12,
-                                        color: Color(0xFF888888),
-                                        fontWeight: FontWeight.normal,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      _floatsEnabled 
-                                          ? '${_getNextFloatTimeString()} (Every ${_floatsFrequencyHours}h)'
-                                          : 'Disabled',
-                                      style: TextStyle(
-                                        fontFamily: 'Open Sans',
-                                        fontSize: 15,
-                                        color: _floatsEnabled ? const Color(0xFF222222) : const Color(0xFF888888),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (_floatsEnabled)
-                                const Icon(
-                                  Icons.edit_rounded,
-                                  color: Color(0xFFFF5B24),
-                                  size: 16,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
