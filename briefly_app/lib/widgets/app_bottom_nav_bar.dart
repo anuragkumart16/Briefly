@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppBottomNavBar extends StatelessWidget {
-  /// 0 = Report, 1 = Floats, 2 = Settings
+  /// 0 = Report, 1 = Floats
   final int selectedIndex;
   final ValueChanged<int> onTabTapped;
 
@@ -28,7 +28,6 @@ class AppBottomNavBar extends StatelessWidget {
           children: [
             _navItem(0, Icons.article_outlined, 'Report'),
             _navItem(1, Icons.layers_outlined, 'Floats'),
-            _navItem(2, Icons.settings_outlined, 'Settings'),
           ],
         ),
       ),

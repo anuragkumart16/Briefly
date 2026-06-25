@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'floats_onboarding_screen.dart';
 import 'floats_screen.dart';
 import 'home_screen.dart';
+import 'settings_screen.dart';
 import 'widgets/app_bottom_nav_bar.dart';
 import 'widgets/app_top_bar.dart';
 
@@ -176,15 +177,6 @@ class _MainShellState extends State<MainShell> {
               onSearchChanged: (v) => setState(() => _floatsSearchQuery = v),
             ),
           ),
-          // Tab 2: Settings (stub)
-          const _KeepAlive(
-            child: Center(
-              child: Text(
-                'Settings coming soon.',
-                style: TextStyle(fontFamily: 'Open Sans', fontSize: 16, color: Color(0xFF888888)),
-              ),
-            ),
-          ),
         ],
       ),
       floatingActionButton: _selectedIndex == 1
@@ -319,6 +311,38 @@ class _MainShellState extends State<MainShell> {
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Divider(color: Color(0xFFEEEEEE)),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () {
+                        _scaffoldKey.currentState?.closeDrawer();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const SettingsScreen(),
+                          ),
+                        ).then((_) {
+                          _loadSavedTime();
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        color: Colors.transparent,
+                        child: const Row(
+                          children: [
+                            Text(
+                              'Settings',
+                              style: TextStyle(
+                                fontFamily: 'Open Sans',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF222222),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],

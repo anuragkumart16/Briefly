@@ -21,6 +21,9 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   /// Optional extra widget shown before the account icon (e.g. saved time).
   final Widget? trailingWidget;
 
+  /// Whether to show a back button instead of menu.
+  final bool showBackButton;
+
   const AppTopBar({
     super.key,
     required this.title,
@@ -29,6 +32,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.searchController,
     this.onSearchChanged,
     this.trailingWidget,
+    this.showBackButton = false,
   });
 
   bool get _isSearchMode => searchController != null;
@@ -42,10 +46,15 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.white,
       elevation: 0,
       centerTitle: true,
-      leading: IconButton(
-        icon: const Icon(Icons.menu, color: Color(0xFFFF5B24)),
-        onPressed: onMenuTap,
-      ),
+      leading: showBackButton
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFFFF5B24)),
+              onPressed: () => Navigator.of(context).pop(),
+            )
+          : IconButton(
+              icon: const Icon(Icons.menu, color: Color(0xFFFF5B24)),
+              onPressed: onMenuTap,
+            ),
       title: _isSearchMode
           ? Container(
               height: 40,
