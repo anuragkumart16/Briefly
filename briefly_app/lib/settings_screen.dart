@@ -14,6 +14,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _markEmailsUnread = true;
   bool _sendFloatsSilent = true;
   int _floatsFrequencyHours = 2;
+  bool _floatsEnabled = true;
+  bool _reportIncludeTasks = true;
+  bool _reportIncludeCalendar = true;
+  bool _reportIncludeEmails = true;
+  bool _reportIncludeFloats = true;
 
   // Report Time (in sync with main shell / drawer)
   int _reportHour = 20;
@@ -41,6 +46,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _markEmailsUnread = prefs.getBool('mark_emails_unread') ?? true;
       _sendFloatsSilent = prefs.getBool('send_floats_silent') ?? true;
       _floatsFrequencyHours = prefs.getInt('floats_frequency_hours') ?? 2;
+      _floatsEnabled = prefs.getBool('floats_enabled') ?? true;
+      _reportIncludeTasks = prefs.getBool('report_include_tasks') ?? true;
+      _reportIncludeCalendar = prefs.getBool('report_include_calendar') ?? true;
+      _reportIncludeEmails = prefs.getBool('report_include_emails') ?? true;
+      _reportIncludeFloats = prefs.getBool('report_include_floats') ?? true;
 
       _reportHour = prefs.getInt('report_hour') ?? 20;
       _reportMinute = prefs.getInt('report_minute') ?? 0;
@@ -526,34 +536,95 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ]),
                 const SizedBox(height: 20),
 
+                // Report Content
+                _buildSectionHeader('Report Content'),
+                _buildSectionCard([
+                  _buildToggleRow(
+                    'Add Tasks',
+                    _reportIncludeTasks,
+                    (val) {
+                      setState(() => _reportIncludeTasks = val);
+                      _saveBool('report_include_tasks', val);
+                    },
+                  ),
+                  const Divider(color: Color(0xFFE5E7EB), height: 1),
+                  _buildToggleRow(
+                    'Add Calendar Events',
+                    _reportIncludeCalendar,
+                    (val) {
+                      setState(() => _reportIncludeCalendar = val);
+                      _saveBool('report_include_calendar', val);
+                    },
+                  ),
+                  const Divider(color: Color(0xFFE5E7EB), height: 1),
+                  _buildToggleRow(
+                    'Add Emails',
+                    _reportIncludeEmails,
+                    (val) {
+                      setState(() => _reportIncludeEmails = val);
+                      _saveBool('report_include_emails', val);
+                    },
+                  ),
+                  const Divider(color: Color(0xFFE5E7EB), height: 1),
+                  _buildToggleRow(
+                    'Add Floats',
+                    _reportIncludeFloats,
+                    (val) {
+                      setState(() => _reportIncludeFloats = val);
+                      _saveBool('report_include_floats', val);
+                    },
+                  ),
+                ]),
+                const SizedBox(height: 20),
+
                 // Float Settings
                 _buildSectionHeader('Float Settings'),
                 _buildSectionCard([
                   _buildToggleRow(
-                    'Send Floats During Silent Hours',
-                    _sendFloatsSilent,
+                    'Enable Floats',
+                    _floatsEnabled,
                     (val) {
-                      setState(() => _sendFloatsSilent = val);
-                      _saveBool('send_floats_silent', val);
+                      setState(() => _floatsEnabled = val);
+                      _saveBool('floats_enabled', val);
                     },
                   ),
-                  const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildTappableRow(
-                    'Frequency',
-                    'Every $_floatsFrequencyHours ${_floatsFrequencyHours == 1 ? 'Hour' : 'Hours'}',
-                    _showFrequencySheet,
-                  ),
-                  const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildTappableRow(
-                    'Starts At :',
-                    _formattedTime(_silentStartHour, _silentStartMinute),
-                    _pickSilentHoursStart,
-                  ),
-                  const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildTappableRow(
-                    'Ends At :',
-                    _formattedTime(_silentEndHour, _silentEndMinute),
-                    _pickSilentHoursEnd,
+                  Opacity(
+                    opacity: _floatsEnabled ? 1.0 : 0.5,
+                    child: IgnorePointer(
+                      ignoring: !_floatsEnabled,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Divider(color: Color(0xFFE5E7EB), height: 1),
+                          _buildToggleRow(
+                            'Send Floats During Silent Hours',
+                            _sendFloatsSilent,
+                            (val) {
+                              setState(() => _sendFloatsSilent = val);
+                              _saveBool('send_floats_silent', val);
+                            },
+                          ),
+                          const Divider(color: Color(0xFFE5E7EB), height: 1),
+                          _buildTappableRow(
+                            'Frequency',
+                            'Every $_floatsFrequencyHours ${_floatsFrequencyHours == 1 ? 'Hour' : 'Hours'}',
+                            _showFrequencySheet,
+                          ),
+                          const Divider(color: Color(0xFFE5E7EB), height: 1),
+                          _buildTappableRow(
+                            'Starts At :',
+                            _formattedTime(_silentStartHour, _silentStartMinute),
+                            _pickSilentHoursStart,
+                          ),
+                          const Divider(color: Color(0xFFE5E7EB), height: 1),
+                          _buildTappableRow(
+                            'Ends At :',
+                            _formattedTime(_silentEndHour, _silentEndMinute),
+                            _pickSilentHoursEnd,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ]),
                 const SizedBox(height: 20),
@@ -622,7 +693,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: value,
             onChanged: onChanged,
             activeThumbColor: Colors.white,
-            activeTrackColor: const Color(0xFF2F6FF2),
+            activeTrackColor: const Color(0xFFFF5B24),
             inactiveThumbColor: Colors.white,
             inactiveTrackColor: const Color(0xFFE0E0E0),
           ),
@@ -648,14 +719,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: Color(0xFF222222),
               ),
             ),
-            Text(
-              value,
-              style: const TextStyle(
-                fontFamily: 'Open Sans',
-                fontSize: 16,
-                fontWeight: FontWeight.normal,
-                color: Color(0xFF2F6FF2),
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontSize: 16,
+                    fontWeight: FontWeight.normal,
+                    color: Color(0xFFFF5B24),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.edit_rounded,
+                  color: Color(0xFFFF5B24),
+                  size: 14,
+                ),
+              ],
             ),
           ],
         ),
