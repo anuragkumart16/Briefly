@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { deleteUser } from "../controllers/user.controller";
+import { deleteUser, registerFcmToken, unregisterFcmToken } from "../controllers/user.controller";
 
 /**
  * User Account Routes.
@@ -10,5 +10,9 @@ const router = Router();
 
 router.route("/:userId")
     .delete(deleteUser);
+
+router.route("/:userId/fcm-token")
+    .post(registerFcmToken)
+    .delete(unregisterFcmToken);
 
 export default router;

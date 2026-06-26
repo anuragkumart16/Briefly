@@ -8,6 +8,7 @@ import 'config.dart';
 import 'widgets/app_top_bar.dart';
 import 'services/background_scheduler.dart';
 import 'widgets/account_bottom_sheet.dart';
+import 'services/fcm_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -501,6 +502,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final navigator = Navigator.of(context);
                 navigator.pop();
                 final prefs = await SharedPreferences.getInstance();
+                final userId = prefs.getString('user_id') ?? '';
+                if (userId.isNotEmpty) {
+                  try {
+                    await FcmService.unregisterDevice(userId);
+                  } catch (e) {
+                    debugPrint('Failed to unregister FCM: $e');
+                  }
+                }
                 await prefs.clear();
                 navigator.pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const AuthScreen()),

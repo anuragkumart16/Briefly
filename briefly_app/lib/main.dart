@@ -1,5 +1,6 @@
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'services/notification_helper.dart';
+import 'services/fcm_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,6 +38,18 @@ void main() async {
   } catch (e) {
     debugPrint('Failed to restore saved schedules: $e');
   }
+  try {
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      await FcmService.init();
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('user_id') ?? '';
+      if (userId.isNotEmpty) {
+        await FcmService.registerDevice(userId);
+      }
+    }
+  } catch (e) {
+    debugPrint('Failed to initialize FcmService: $e');
+  }
   runApp(const MyApp());
 
   NotificationHelper.onNotificationTap = (String? payload) async {
@@ -57,6 +70,9 @@ void main() async {
   try {
     if (!kIsWeb && Platform.isAndroid) {
       await NotificationHelper.handleColdStart();
+    }
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      await FcmService.handleColdStart();
     }
   } catch (e) {
     debugPrint('Failed to handle cold start: $e');

@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'home_screen.dart';
 import 'config.dart';
+import 'package:flutter/foundation.dart';
+import 'services/fcm_service.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -129,10 +131,17 @@ class _AuthScreenState extends State<AuthScreen> {
         if (responseData['success'] == true && responseData['data'] != null) {
           final user = responseData['data']['user'];
           if (user != null) {
-            await prefs.setString('user_id', user['id'] ?? '');
+            final userId = user['id'] ?? '';
+            await prefs.setString('user_id', userId);
             await prefs.setString('user_email', user['email'] ?? '');
             await prefs.setString('user_name', user['name'] ?? '');
             await prefs.setString('user_picture', user['picture'] ?? '');
+
+            if (userId.isNotEmpty && !kIsWeb) {
+              FcmService.registerDevice(userId).catchError((e) {
+                debugPrint('Failed to register FCM: $e');
+              });
+            }
           }
         }
 

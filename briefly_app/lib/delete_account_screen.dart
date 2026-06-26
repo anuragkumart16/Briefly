@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'auth_screen.dart';
 import 'config.dart';
+import 'services/fcm_service.dart';
 
 class DeleteAccountScreen extends StatefulWidget {
   const DeleteAccountScreen({super.key});
@@ -57,6 +58,15 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
 
       if (feedbackResponse.statusCode != 201 && feedbackResponse.statusCode != 200) {
         throw Exception('Failed to save feedback.');
+      }
+
+      // 1.5 Unregister FCM Device
+      if (userId.isNotEmpty) {
+        try {
+          await FcmService.unregisterDevice(userId);
+        } catch (e) {
+          debugPrint('Failed to unregister FCM device: $e');
+        }
       }
 
       // 2. Delete user account from backend database

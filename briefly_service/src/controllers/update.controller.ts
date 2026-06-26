@@ -47,4 +47,41 @@ const getLatestAppVersion = async (req: Request, res: Response) => {
     }
 };
 
-export { getLatestAppVersion };
+/**
+ * Create a new app version.
+ * 
+ * Request body:
+ *  - platform: "android" | "ios" (default: "android")
+ *  - version: string (required)
+ *  - buildNumber: number (required)
+ *  - url: string (required)
+ *  - releaseNotes: string (optional)
+ *  - mandatory: boolean (default: false)
+ */
+const createAppVersion = async (req: Request, res: Response) => {
+    const { platform, version, buildNumber, url, releaseNotes, mandatory } = req.body;
+
+    if (!version || buildNumber === undefined || !url) {
+        return ApiResponse(res, 400, "Missing required fields: version, buildNumber, and url are required.");
+    }
+
+    try {
+        const newVersion = await prisma.appVersion.create({
+            data: {
+                platform: platform || "android",
+                version,
+                buildNumber: Number(buildNumber),
+                url,
+                releaseNotes: releaseNotes || "",
+                mandatory: mandatory ?? false
+            }
+        });
+
+        return ApiResponse(res, 201, "App version created successfully", newVersion);
+    } catch (error: any) {
+        console.error("Error in createAppVersion:", error);
+        return ApiResponse(res, 500, error.message || "Failed to create app version");
+    }
+};
+
+export { getLatestAppVersion, createAppVersion };

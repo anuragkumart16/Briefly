@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../auth_screen.dart';
+import '../services/fcm_service.dart';
 
 class AccountBottomSheet extends StatelessWidget {
   final String userName;
@@ -24,6 +25,14 @@ class AccountBottomSheet extends StatelessWidget {
 
   Future<void> _handleSignOut(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('user_id') ?? '';
+    if (userId.isNotEmpty) {
+      try {
+        await FcmService.unregisterDevice(userId);
+      } catch (e) {
+        debugPrint('Failed to unregister FCM: $e');
+      }
+    }
     await prefs.clear(); // Clear session
     try {
       final googleSignIn = GoogleSignIn();

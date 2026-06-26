@@ -21,6 +21,7 @@ model User {
   accessToken  String
   refreshToken String?
   tokenExpiry  DateTime?
+  fcmTokens    String[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   settings     Settings?
