@@ -208,9 +208,9 @@ class _ReportScreenState extends State<ReportScreen> {
             title,
             style: const TextStyle(
               fontFamily: 'Open Sans',
-              fontSize: 18.5,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF222222),
             ),
           ),
         ],
@@ -342,8 +342,8 @@ class _ReportScreenState extends State<ReportScreen> {
             _formattedDate(),
             style: const TextStyle(
               fontFamily: 'Open Sans',
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
               color: Color(0xFFFF5B24),
             ),
           ),
@@ -392,7 +392,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     summary,
                     style: const TextStyle(
                       fontFamily: 'Open Sans',
-                      fontSize: 15.5,
+                      fontSize: 14,
                       color: Color(0xFFE2E8F0),
                       height: 1.6,
                     ),
@@ -407,9 +407,9 @@ class _ReportScreenState extends State<ReportScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: const Color(0xFFEEEEEE)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,8 +425,8 @@ class _ReportScreenState extends State<ReportScreen> {
                           style: TextStyle(
                             fontFamily: 'Open Sans',
                             fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF606060),
                             letterSpacing: 0.8,
                           ),
                         ),
@@ -435,9 +435,9 @@ class _ReportScreenState extends State<ReportScreen> {
                           wisdom,
                           style: const TextStyle(
                             fontFamily: 'Open Sans',
-                            fontSize: 14.5,
+                            fontSize: 14,
                             fontStyle: FontStyle.italic,
-                            color: Color(0xFF334155),
+                            color: Color(0xFF606060),
                             height: 1.5,
                           ),
                         ),
@@ -461,9 +461,9 @@ class _ReportScreenState extends State<ReportScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: const Color(0xFFEEEEEE)),
               ),
               child: Column(
                 children: tasks.map((t) => _buildTaskTile(t as Map<String, dynamic>)).toList(),
@@ -493,9 +493,9 @@ class _ReportScreenState extends State<ReportScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: const Color(0xFFEEEEEE)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,15 +508,15 @@ class _ReportScreenState extends State<ReportScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                  border: Border.all(color: const Color(0xFFEEEEEE)),
                 ),
                 child: Text(
                   timeStr,
                   style: const TextStyle(
                     fontFamily: 'Open Sans',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF475569),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF606060),
                   ),
                 ),
               ),
@@ -526,9 +526,9 @@ class _ReportScreenState extends State<ReportScreen> {
                   title,
                   style: const TextStyle(
                     fontFamily: 'Open Sans',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E293B),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF222222),
                   ),
                 ),
               ),
@@ -540,8 +540,8 @@ class _ReportScreenState extends State<ReportScreen> {
               summary,
               style: const TextStyle(
                 fontFamily: 'Open Sans',
-                fontSize: 14,
-                color: Color(0xFF475569),
+                fontSize: 12,
+                color: Color(0xFF606060),
                 height: 1.45,
               ),
             ),
@@ -557,7 +557,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     location,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontFamily: 'Open Sans', fontSize: 13.5, color: Color(0xFF64748B)),
+                    style: const TextStyle(fontFamily: 'Open Sans', fontSize: 12, color: Color(0xFF606060)),
                   ),
                 ),
               ],
@@ -578,8 +578,8 @@ class _ReportScreenState extends State<ReportScreen> {
                     'People: $attendees',
                     style: const TextStyle(
                       fontFamily: 'Open Sans',
-                      fontSize: 13.5,
-                      color: Color(0xFF64748B),
+                      fontSize: 12,
+                      color: Color(0xFF606060),
                     ),
                   ),
                 ),
@@ -606,8 +606,8 @@ class _ReportScreenState extends State<ReportScreen> {
                           docTitle,
                           style: const TextStyle(
                             fontFamily: 'Open Sans',
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
                             color: Color(0xFFFF5B24),
                             decoration: TextDecoration.underline,
                           ),
@@ -656,9 +656,9 @@ class _ReportScreenState extends State<ReportScreen> {
                       title,
                       style: TextStyle(
                         fontFamily: 'Open Sans',
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.bold,
-                        color: isCompleted ? const Color(0xFF94A3B8) : const Color(0xFF1E293B),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: isCompleted ? const Color(0xFF94A3B8) : const Color(0xFF222222),
                         decoration: isCompleted ? TextDecoration.lineThrough : null,
                       ),
                     ),
@@ -668,8 +668,8 @@ class _ReportScreenState extends State<ReportScreen> {
                         details,
                         style: const TextStyle(
                           fontFamily: 'Open Sans',
-                          fontSize: 13.5,
-                          color: Color(0xFF475569),
+                          fontSize: 12,
+                          color: Color(0xFF606060),
                           height: 1.4,
                         ),
                       ),
@@ -746,9 +746,9 @@ class _ReportScreenState extends State<ReportScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: const Color(0xFFEEEEEE)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -757,8 +757,12 @@ class _ReportScreenState extends State<ReportScreen> {
               width: 42,
               height: 42,
               decoration: const BoxDecoration(
-                color: Color(0xFFFF5B24),
                 shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFF8A65), Color(0xFFFF5B24)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               ),
               alignment: Alignment.center,
               child: Text(
@@ -766,7 +770,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 14,
                   fontFamily: 'Open Sans',
                 ),
               ),
@@ -785,9 +789,9 @@ class _ReportScreenState extends State<ReportScreen> {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontFamily: 'Open Sans',
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E293B),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF222222),
                           ),
                         ),
                       ),
@@ -804,7 +808,7 @@ class _ReportScreenState extends State<ReportScreen> {
                             'Action Needed',
                             style: TextStyle(
                               fontFamily: 'Open Sans',
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFFFF5B24),
                             ),
@@ -822,26 +826,26 @@ class _ReportScreenState extends State<ReportScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontFamily: 'Open Sans',
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF334155),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF606060),
                     ),
                   ),
                   const SizedBox(height: 8),
 
-                  // Crux and Why Sent blocks
+                  // Crux and Why Sent bloc
                   if (crux.isNotEmpty) ...[
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
                           'Crux: ',
-                          style: TextStyle(fontFamily: 'Open Sans', fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                          style: TextStyle(fontFamily: 'Open Sans', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF606060)),
                         ),
                         Expanded(
                           child: Text(
                             crux,
-                            style: const TextStyle(fontFamily: 'Open Sans', fontSize: 13.5, color: Color(0xFF475569)),
+                            style: const TextStyle(fontFamily: 'Open Sans', fontSize: 12, color: Color(0xFF606060)),
                           ),
                         ),
                       ],
@@ -854,28 +858,27 @@ class _ReportScreenState extends State<ReportScreen> {
                       children: [
                         const Text(
                           'Context: ',
-                          style: TextStyle(fontFamily: 'Open Sans', fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                          style: TextStyle(fontFamily: 'Open Sans', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF606060)),
                         ),
                         Expanded(
                           child: Text(
                             whySent,
-                            style: const TextStyle(fontFamily: 'Open Sans', fontSize: 13.5, color: Color(0xFF475569)),
+                            style: const TextStyle(fontFamily: 'Open Sans', fontSize: 12, color: Color(0xFF606060)),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
                   ],
-
                   if (summary.isNotEmpty) ...[
-                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                    const Divider(height: 1, color: Color(0xFFEEEEEE)),
                     const SizedBox(height: 6),
                     Text(
                       summary,
                       style: const TextStyle(
                         fontFamily: 'Open Sans',
-                        fontSize: 13.5,
-                        color: Color(0xFF475569),
+                        fontSize: 12,
+                        color: Color(0xFF606060),
                         height: 1.45,
                       ),
                     ),
@@ -893,7 +896,7 @@ class _ReportScreenState extends State<ReportScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: const Color(0xFFCBD5E1)),
+                            border: Border.all(color: const Color(0xFFEEEEEE)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -904,9 +907,9 @@ class _ReportScreenState extends State<ReportScreen> {
                                 attName,
                                 style: const TextStyle(
                                   fontFamily: 'Open Sans',
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF475569),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF606060),
                                 ),
                               ),
                             ],

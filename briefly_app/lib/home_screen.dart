@@ -389,8 +389,8 @@ class _HomeBodyState extends State<HomeBody> {
                 style: const TextStyle(
                   fontFamily: 'Open Sans',
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF222222),
                 ),
               ),
             ],
@@ -419,18 +419,6 @@ class _HomeBodyState extends State<HomeBody> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             children: [
-              // Header title
-              const Text(
-                'My Dashboard',
-                style: TextStyle(
-                  fontFamily: 'Open Sans',
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-              const SizedBox(height: 16),
-
               // Today's Report Card
               _buildReportCard(),
 
@@ -524,7 +512,7 @@ class _HomeBodyState extends State<HomeBody> {
                   : 'Your Daily Briefing report is ready to be compiled. Tap here to fetch your briefing updates.',
               style: const TextStyle(
                 fontFamily: 'Open Sans',
-                fontSize: 15.5,
+                fontSize: 14,
                 color: Color(0xFFE2E8F0),
                 height: 1.5,
               ),
@@ -548,9 +536,9 @@ class _HomeBodyState extends State<HomeBody> {
           Container(
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 2),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: const Color(0xFFEEEEEE)),
             ),
             child: Column(
               children: _tasks.map((task) {
@@ -587,9 +575,9 @@ class _HomeBodyState extends State<HomeBody> {
                               title,
                               style: TextStyle(
                                 fontFamily: 'Open Sans',
-                                fontSize: 15.5,
-                                fontWeight: FontWeight.bold,
-                                color: isCompleted ? Colors.grey : const Color(0xFF1E293B),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: isCompleted ? Colors.grey : const Color(0xFF222222),
                                 decoration: isCompleted ? TextDecoration.lineThrough : null,
                               ),
                             ),
@@ -599,16 +587,17 @@ class _HomeBodyState extends State<HomeBody> {
                                 notes,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                                style: const TextStyle(fontFamily: 'Open Sans', fontSize: 12, color: Color(0xFF606060)),
                               ),
                             ],
                             const SizedBox(height: 4),
                             Text(
                               deadline,
                               style: TextStyle(
+                                fontFamily: 'Open Sans',
                                 fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: isCompleted ? Colors.grey : const Color(0xFF64748B),
+                                fontWeight: FontWeight.w500,
+                                color: isCompleted ? Colors.grey : const Color(0xFF606060),
                               ),
                             ),
                           ],
@@ -662,9 +651,9 @@ class _HomeBodyState extends State<HomeBody> {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: const Color(0xFFEEEEEE)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -673,10 +662,10 @@ class _HomeBodyState extends State<HomeBody> {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: const Color(0xFFCBD5E1))),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: const Color(0xFFEEEEEE))),
                         child: Text(
                           timeString,
-                          style: const TextStyle(fontFamily: 'Open Sans', fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                          style: const TextStyle(fontFamily: 'Open Sans', fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF606060)),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -685,7 +674,7 @@ class _HomeBodyState extends State<HomeBody> {
                           title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontFamily: 'Open Sans', fontSize: 15.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                          style: const TextStyle(fontFamily: 'Open Sans', fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF222222)),
                         ),
                       ),
                     ],
@@ -701,7 +690,7 @@ class _HomeBodyState extends State<HomeBody> {
                             location,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontFamily: 'Open Sans', fontSize: 13, color: Color(0xFF64748B)),
+                            style: const TextStyle(fontFamily: 'Open Sans', fontSize: 12, color: Color(0xFF606060)),
                           ),
                         ),
                       ],
@@ -740,9 +729,9 @@ class _HomeBodyState extends State<HomeBody> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: const Color(0xFFEEEEEE)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -750,7 +739,14 @@ class _HomeBodyState extends State<HomeBody> {
                     Container(
                       width: 38,
                       height: 38,
-                      decoration: const BoxDecoration(color: Color(0xFFFF5B24), shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFFF8A65), Color(0xFFFF5B24)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
                       alignment: Alignment.center,
                       child: Text(
                         initial,
@@ -770,7 +766,7 @@ class _HomeBodyState extends State<HomeBody> {
                                   displayName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontFamily: 'Open Sans', fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                  style: const TextStyle(fontFamily: 'Open Sans', fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF222222)),
                                 ),
                               ),
                               const Icon(Icons.open_in_new_rounded, size: 15, color: Color(0xFF94A3B8)),
@@ -781,7 +777,7 @@ class _HomeBodyState extends State<HomeBody> {
                             subject,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontFamily: 'Open Sans', fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                            style: const TextStyle(fontFamily: 'Open Sans', fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF606060)),
                           ),
                           if (snippet.isNotEmpty) ...[
                             const SizedBox(height: 4),
@@ -789,7 +785,7 @@ class _HomeBodyState extends State<HomeBody> {
                               snippet,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.35),
+                              style: const TextStyle(fontFamily: 'Open Sans', fontSize: 12, color: Color(0xFF606060), height: 1.35),
                             ),
                           ],
                         ],
@@ -809,14 +805,14 @@ class _HomeBodyState extends State<HomeBody> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: const Color(0xFFEEEEEE)),
       ),
       child: Text(
         message,
         textAlign: TextAlign.center,
-        style: const TextStyle(fontFamily: 'Open Sans', fontSize: 15, color: Color(0xFF64748B)),
+        style: const TextStyle(fontFamily: 'Open Sans', fontSize: 13, color: Color(0xFF606060)),
       ),
     );
   }
