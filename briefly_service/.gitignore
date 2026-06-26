@@ -13,3 +13,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 /src/generated/prisma
+
+# Firebase Service Account Credentials
+*firebase-adminsdk*.json
+firebase-service-account.json
