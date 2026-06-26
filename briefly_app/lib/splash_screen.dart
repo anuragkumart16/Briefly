@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'onboarding_screen.dart';
+import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,6 +12,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  bool _isLoggedIn = false;
+
   @override
   void initState() {
     super.initState();
@@ -21,14 +24,16 @@ class _SplashScreenState extends State<SplashScreen> {
       systemNavigationBarColor: Colors.white,
       systemNavigationBarIconBrightness: Brightness.dark,
     ));
-    _resetOnboarding();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    _checkAuthState().then((_) {
+      if (!mounted) return;
       Future.delayed(const Duration(milliseconds: 1000), () {
         if (mounted) {
           Navigator.of(context).pushReplacement(
             PageRouteBuilder(
               transitionDuration: const Duration(milliseconds: 350),
-              pageBuilder: (context, animation, _) => const OnboardingScreen(),
+              pageBuilder: (context, animation, _) => _isLoggedIn 
+                  ? const HomeScreen() 
+                  : const OnboardingScreen(),
               transitionsBuilder: (context, animation, _, child) {
                 return FadeTransition(opacity: animation, child: child);
               },
@@ -39,10 +44,13 @@ class _SplashScreenState extends State<SplashScreen> {
     });
   }
 
-  Future<void> _resetOnboarding() async {
+  Future<void> _checkAuthState() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('floats_onboarding_done', false);
-    await prefs.setBool('time_saved', false);
+    _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+    if (!_isLoggedIn) {
+      await prefs.setBool('floats_onboarding_done', false);
+      await prefs.setBool('time_saved', false);
+    }
   }
 
   @override

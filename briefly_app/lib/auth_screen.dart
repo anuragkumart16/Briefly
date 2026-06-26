@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'home_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -11,6 +14,8 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
+  static const String _googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+
   TimeOfDay _selectedTime = const TimeOfDay(hour: 20, minute: 30);
 
   @override
@@ -44,8 +49,91 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  void _onGooglePressed() {
-    // TODO: implement real Google OAuth here
+  Future<void> _onGooglePressed() async {
+    final GoogleSignIn googleSignIn = GoogleSignIn(
+      scopes: [
+        'https://www.googleapis.com/auth/gmail.modify',
+        'https://www.googleapis.com/auth/calendar',
+        'https://www.googleapis.com/auth/tasks',
+      ],
+      serverClientId: _googleServerClientId == 'YOUR_GOOGLE_SERVER_CLIENT_ID.apps.googleusercontent.com' ? null : _googleServerClientId,
+    );
+
+    try {
+      final GoogleSignInAccount? account = await googleSignIn.signIn();
+      if (account == null) {
+        // User cancelled the sign-in flow
+        return;
+      }
+
+      final String? authCode = account.serverAuthCode;
+      if (authCode == null) {
+        throw Exception(
+          'Failed to retrieve authorization code. Make sure you set a valid Web client ID in the _googleServerClientId constant.',
+        );
+      }
+
+      // Show loading indicator dialog
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF5B24)),
+          ),
+        ),
+      );
+
+      // POST authorization code to the backend service
+      final response = await http.post(
+        Uri.parse('http://localhost:3000/api/v1/auth/google'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'code': authCode}),
+      );
+
+      // Dismiss the loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_logged_in', true);
+        
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final user = responseData['data']['user'];
+          if (user != null) {
+            await prefs.setString('user_id', user['id'] ?? '');
+            await prefs.setString('user_email', user['email'] ?? '');
+            await prefs.setString('user_name', user['name'] ?? '');
+            await prefs.setString('user_picture', user['picture'] ?? '');
+          }
+        }
+
+        // Success: Proceed to time setup bottom sheet
+        if (mounted) {
+          _showTimePickerSheet();
+        }
+      } else {
+        throw Exception(
+          'Backend returned error status code ${response.statusCode}: ${response.body}',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Google Sign-In failed: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showTimePickerSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
