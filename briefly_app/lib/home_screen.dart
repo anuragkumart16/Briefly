@@ -541,7 +541,7 @@ class _HomeBodyState extends State<HomeBody> {
       children: [
         _buildSectionHeader('Tasks', Icons.task_alt_rounded, onTrailingTap: _showAddTaskSheet, trailingIcon: Icons.add_circle_outline_rounded),
         if (_isTasksLoading && _tasks.isEmpty)
-          const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()))
+          _buildTasksSkeleton()
         else if (_tasks.isEmpty)
           _buildEmptyCard('No pending Google Tasks today.')
         else
@@ -636,7 +636,7 @@ class _HomeBodyState extends State<HomeBody> {
       children: [
         _buildSectionHeader('Schedule (Remaining)', Icons.calendar_today_rounded),
         if (_isCalendarLoading && _calendarEvents.isEmpty)
-          const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()))
+          _buildScheduleSkeleton()
         else if (_calendarEvents.isEmpty)
           _buildEmptyCard('No calendar events remaining today.')
         else
@@ -721,7 +721,7 @@ class _HomeBodyState extends State<HomeBody> {
       children: [
         _buildSectionHeader('Emails Today', Icons.mail_outline_rounded),
         if (_isEmailsLoading && _emails.isEmpty)
-          const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()))
+          _buildEmailsSkeleton()
         else if (_emails.isEmpty)
           _buildEmptyCard('No unread emails today.')
         else
@@ -818,6 +818,167 @@ class _HomeBodyState extends State<HomeBody> {
         textAlign: TextAlign.center,
         style: const TextStyle(fontFamily: 'Open Sans', fontSize: 15, color: Color(0xFF64748B)),
       ),
+    );
+  }
+
+  Widget _buildTasksSkeleton() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        children: List.generate(3, (index) => const Padding(
+          padding: EdgeInsets.only(bottom: 16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SkeletonWidget(width: 22, height: 22, borderRadius: 11),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonWidget(width: 180, height: 15.5, borderRadius: 4),
+                    SizedBox(height: 6),
+                    SkeletonWidget(width: 120, height: 12, borderRadius: 4),
+                  ],
+                ),
+              ),
+              SizedBox(width: 12),
+              SkeletonWidget(width: 20, height: 20, borderRadius: 4),
+            ],
+          ),
+        )),
+      ),
+    );
+  }
+
+  Widget _buildScheduleSkeleton() {
+    return Column(
+      children: List.generate(2, (index) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: const Row(
+          children: [
+            SkeletonWidget(width: 65, height: 24, borderRadius: 6),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonWidget(width: 150, height: 15.5, borderRadius: 4),
+                  SizedBox(height: 6),
+                  SkeletonWidget(width: 100, height: 13, borderRadius: 4),
+                ],
+              ),
+            ),
+          ],
+        ),
+      )),
+    );
+  }
+
+  Widget _buildEmailsSkeleton() {
+    return Column(
+      children: List.generate(2, (index) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SkeletonWidget(width: 38, height: 38, borderRadius: 19),
+            SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      SkeletonWidget(width: 100, height: 14.5, borderRadius: 4),
+                      SkeletonWidget(width: 15, height: 15, borderRadius: 4),
+                    ],
+                  ),
+                  SizedBox(height: 6),
+                  SkeletonWidget(width: 140, height: 13.5, borderRadius: 4),
+                  SizedBox(height: 6),
+                  SkeletonWidget(width: double.infinity, height: 12.5, borderRadius: 4),
+                ],
+              ),
+            ),
+          ],
+        ),
+      )),
+    );
+  }
+}
+
+class SkeletonWidget extends StatefulWidget {
+  final double width;
+  final double height;
+  final double borderRadius;
+
+  const SkeletonWidget({
+    super.key,
+    required this.width,
+    required this.height,
+    this.borderRadius = 8,
+  });
+
+  @override
+  State<SkeletonWidget> createState() => _SkeletonWidgetState();
+}
+
+class _SkeletonWidgetState extends State<SkeletonWidget> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.45, end: 0.8).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _animation.value,
+          child: Container(
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE5E7EB),
+              borderRadius: BorderRadius.circular(widget.borderRadius),
+            ),
+          ),
+        );
+      },
     );
   }
 }

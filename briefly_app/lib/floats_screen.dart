@@ -672,6 +672,41 @@ class FloatsBodyState extends State<FloatsBody> {
     );
   }
 
+  Widget _buildSkeletonLoader() {
+    return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      itemCount: 5,
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F7FA),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+          ),
+          child: const Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonWidget(width: 220, height: 16, borderRadius: 4),
+                    SizedBox(height: 8),
+                    SkeletonWidget(width: 140, height: 12, borderRadius: 4),
+                  ],
+                ),
+              ),
+              SizedBox(width: 12),
+              SkeletonWidget(width: 22, height: 22, borderRadius: 11),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final list = _getFilteredAndSortedList();
@@ -681,11 +716,7 @@ class FloatsBodyState extends State<FloatsBody> {
         _buildSortFilterHeader(),
         Expanded(
           child: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF5B24)),
-                  ),
-                )
+              ? _buildSkeletonLoader()
               : RefreshIndicator(
                   onRefresh: () => _fetchFloats(isPullToRefresh: true),
                   color: const Color(0xFFFF5B24),
@@ -801,6 +832,63 @@ class _FloatTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class SkeletonWidget extends StatefulWidget {
+  final double width;
+  final double height;
+  final double borderRadius;
+
+  const SkeletonWidget({
+    super.key,
+    required this.width,
+    required this.height,
+    this.borderRadius = 8,
+  });
+
+  @override
+  State<SkeletonWidget> createState() => _SkeletonWidgetState();
+}
+
+class _SkeletonWidgetState extends State<SkeletonWidget> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.45, end: 0.8).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _animation.value,
+          child: Container(
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE5E7EB),
+              borderRadius: BorderRadius.circular(widget.borderRadius),
+            ),
+          ),
+        );
+      },
     );
   }
 }
