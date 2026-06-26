@@ -80,6 +80,7 @@ class _AuthScreenState extends State<AuthScreen> {
         'https://www.googleapis.com/auth/tasks',
       ],
       serverClientId: _googleServerClientId == 'YOUR_GOOGLE_SERVER_CLIENT_ID.apps.googleusercontent.com' ? null : _googleServerClientId,
+      forceCodeForRefreshToken: true,
     );
 
     try {

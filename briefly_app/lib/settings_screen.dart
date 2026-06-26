@@ -6,6 +6,7 @@ import 'auth_screen.dart';
 import 'delete_account_screen.dart';
 import 'config.dart';
 import 'widgets/app_top_bar.dart';
+import 'services/background_scheduler.dart';
 import 'widgets/account_bottom_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -160,12 +161,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
     await _syncSetting(key, value);
+    if (key == 'floats_enabled') {
+      await BackgroundScheduler.scheduleFloats(_floatsFrequencyHours, value);
+    }
   }
 
   Future<void> _saveInt(String key, int value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(key, value);
     await _syncSetting(key, value);
+    if (key == 'floats_frequency_hours') {
+      await BackgroundScheduler.scheduleFloats(value, _floatsEnabled);
+    } else if (key == 'report_hour') {
+      await BackgroundScheduler.scheduleDailyReport(value, _reportMinute);
+    } else if (key == 'report_minute') {
+      await BackgroundScheduler.scheduleDailyReport(_reportHour, value);
+    }
   }
 
   String _formattedTime(int hour, int minute) {

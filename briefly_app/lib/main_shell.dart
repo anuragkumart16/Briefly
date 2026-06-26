@@ -12,6 +12,7 @@ import 'settings_screen.dart';
 import 'widgets/app_bottom_nav_bar.dart';
 import 'widgets/app_top_bar.dart';
 import 'widgets/account_bottom_sheet.dart';
+import 'services/background_scheduler.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -57,7 +58,8 @@ class _MainShellState extends State<MainShell> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getBool('time_saved') ?? false;
+      final savedVal = prefs.get('time_saved');
+      final saved = savedVal == true || savedVal == 1;
       if (!saved && mounted) {
         _scaffoldKey.currentState?.openDrawer();
       }
@@ -85,6 +87,11 @@ class _MainShellState extends State<MainShell> {
         _userPictureUrl = pictureUrl;
       });
     }
+
+    if (hour != null && minute != null) {
+      await BackgroundScheduler.scheduleDailyReport(hour, minute);
+    }
+    await BackgroundScheduler.scheduleFloats(floatsFrequencyHours, floatsEnabled);
   }
 
 
@@ -164,6 +171,7 @@ class _MainShellState extends State<MainShell> {
                 setState(() {
                   _floatsEnabled = true;
                 });
+                await BackgroundScheduler.scheduleFloats(_floatsFrequencyHours, true);
                 _onTabTapped(1);
               },
               style: ElevatedButton.styleFrom(
@@ -420,11 +428,11 @@ class _MainShellState extends State<MainShell> {
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text(
-            'Logout',
+            'Sign Out',
             style: TextStyle(fontFamily: 'Open Sans', fontWeight: FontWeight.bold),
           ),
           content: const Text(
-            'Are you sure you want to logout?',
+            'Are you sure you want to sign out?',
             style: TextStyle(fontFamily: 'Open Sans'),
           ),
           actions: [
@@ -447,7 +455,7 @@ class _MainShellState extends State<MainShell> {
                 );
               },
               child: const Text(
-                'Logout',
+                'Sign Out',
                 style: TextStyle(color: Color(0xFFFF5B24), fontFamily: 'Open Sans', fontWeight: FontWeight.bold),
               ),
             ),
@@ -801,7 +809,7 @@ class _MainShellState extends State<MainShell> {
                           ),
                           SizedBox(width: 12),
                            Text(
-                             'Logout',
+                             'Sign Out',
                              style: TextStyle(
                                fontFamily: 'Open Sans',
                                fontSize: 15,

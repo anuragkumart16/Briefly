@@ -39,6 +39,8 @@ const googleAuth = async (req: Request, res: Response) => {
                 client_secret: clientSecret,
                 grant_type: "authorization_code",
                 redirect_uri: "",
+                access_type: "offline",
+                prompt: "consent",
             }),
         });
 

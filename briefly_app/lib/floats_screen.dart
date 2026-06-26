@@ -1,4 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'config.dart';
 
 class FloatModel {
   final String id;
@@ -14,6 +18,20 @@ class FloatModel {
     required this.createdAt,
     required this.updatedAt,
   });
+
+  factory FloatModel.fromJson(Map<String, dynamic> json) {
+    return FloatModel(
+      id: json['id'] as String? ?? '',
+      text: json['text'] as String? ?? '',
+      isActive: json['isActive'] as bool? ?? true,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String)
+          : DateTime.now(),
+    );
+  }
 }
 
 /// Pure body widget for the Floats tab.
@@ -43,32 +61,52 @@ class FloatsBodyState extends State<FloatsBody> {
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
 
+  bool _isLoading = false;
+  String _userId = '';
+
   @override
   void initState() {
     super.initState();
-    // Pre-populate with initial mock data
-    final now = DateTime.now();
-    final initialStrings = [
-      'The string on table moves the world',
-      'Silence is the loudest scream',
-      'Every moment is a fresh beginning',
-      'Act as if what you do makes a difference',
-      'Knowledge is power, use it wisely',
-      'Small steps lead to big journeys',
-      'You are stronger than you think',
-      'Believe in your infinite potential',
-    ];
+    _loadUserIdAndFloats();
+  }
 
-    for (var i = 0; i < initialStrings.length; i++) {
-      _floats.add(
-        FloatModel(
-          id: i.toString(),
-          text: initialStrings[i],
-          isActive: i % 3 != 2, // Set some inactive for visual testing
-          createdAt: now.subtract(Duration(hours: i * 2)),
-          updatedAt: now.subtract(Duration(hours: i * 2, minutes: i * 5)),
-        ),
+  Future<void> _loadUserIdAndFloats() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userId = prefs.getString('user_id') ?? '';
+    });
+    if (_userId.isNotEmpty) {
+      _fetchFloats();
+    }
+  }
+
+  Future<void> _fetchFloats() async {
+    if (_userId.isEmpty) return;
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConfig.backendUrl}/api/v1/users/$_userId/floats'),
       );
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] != null) {
+          final List<dynamic> data = body['data'];
+          setState(() {
+            _floats.clear();
+            _floats.addAll(data.map((json) => FloatModel.fromJson(json)).toList());
+          });
+        }
+      } else {
+        debugPrint('Failed to load floats: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error fetching floats: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -174,23 +212,32 @@ class FloatsBodyState extends State<FloatsBody> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     final text = controller.text.trim();
                     if (text.isNotEmpty) {
-                      setState(() {
-                        _floats.insert(
-                          0,
-                          FloatModel(
-                            id: DateTime.now().millisecondsSinceEpoch.toString(),
-                            text: text,
-                            isActive: true,
-                            createdAt: DateTime.now(),
-                            updatedAt: DateTime.now(),
-                          ),
+                      Navigator.pop(ctx);
+                      try {
+                        final response = await http.post(
+                          Uri.parse('${AppConfig.backendUrl}/api/v1/users/$_userId/floats'),
+                          headers: {'Content-Type': 'application/json'},
+                          body: jsonEncode({'text': text}),
                         );
-                      });
+                        if (response.statusCode == 201) {
+                          final Map<String, dynamic> body = jsonDecode(response.body);
+                          if (body['success'] == true && body['data'] != null) {
+                            setState(() {
+                              _floats.insert(0, FloatModel.fromJson(body['data']));
+                            });
+                          }
+                        } else {
+                          debugPrint('Failed to save float: ${response.body}');
+                        }
+                      } catch (e) {
+                        debugPrint('Error saving float: $e');
+                      }
+                    } else {
+                      Navigator.pop(ctx);
                     }
-                    Navigator.pop(ctx);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF5B24),
@@ -230,12 +277,23 @@ class FloatsBodyState extends State<FloatsBody> {
               child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontFamily: 'Open Sans')),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context); // close dialog
                 Navigator.pop(sheetCtx); // close bottom sheet
-                setState(() {
-                  _floats.removeWhere((f) => f.id == float.id);
-                });
+                try {
+                  final response = await http.delete(
+                    Uri.parse('${AppConfig.backendUrl}/api/v1/users/$_userId/floats/${float.id}'),
+                  );
+                  if (response.statusCode == 200) {
+                    setState(() {
+                      _floats.removeWhere((f) => f.id == float.id);
+                    });
+                  } else {
+                    debugPrint('Failed to delete float: ${response.body}');
+                  }
+                } catch (e) {
+                  debugPrint('Error deleting float: $e');
+                }
               },
               child: const Text('Delete', style: TextStyle(color: Color(0xFFEA4335), fontFamily: 'Open Sans')),
             ),
@@ -259,13 +317,26 @@ class FloatsBodyState extends State<FloatsBody> {
               child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontFamily: 'Open Sans')),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context); // close dialog
-                setState(() {
-                  _floats.removeWhere((f) => _selectedIds.contains(f.id));
-                  _selectedIds.clear();
-                  _isSelectionMode = false;
-                });
+                try {
+                  final response = await http.post(
+                    Uri.parse('${AppConfig.backendUrl}/api/v1/users/$_userId/floats/batch-delete'),
+                    headers: {'Content-Type': 'application/json'},
+                    body: jsonEncode({'ids': _selectedIds.toList()}),
+                  );
+                  if (response.statusCode == 200) {
+                    setState(() {
+                      _floats.removeWhere((f) => _selectedIds.contains(f.id));
+                      _selectedIds.clear();
+                      _isSelectionMode = false;
+                    });
+                  } else {
+                    debugPrint('Failed to batch delete floats: ${response.body}');
+                  }
+                } catch (e) {
+                  debugPrint('Error batch deleting floats: $e');
+                }
               },
               child: const Text('Delete', style: TextStyle(color: Color(0xFFEA4335), fontFamily: 'Open Sans')),
             ),
@@ -275,21 +346,38 @@ class FloatsBodyState extends State<FloatsBody> {
     );
   }
 
-  void _markSelectedInactive() {
-    setState(() {
-      for (var f in _floats) {
-        if (_selectedIds.contains(f.id)) {
-          f.isActive = false;
-          f.updatedAt = DateTime.now();
-        }
+  void _markSelectedInactive() async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConfig.backendUrl}/api/v1/users/$_userId/floats/batch-update'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'ids': _selectedIds.toList(),
+          'isActive': false,
+        }),
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          for (var f in _floats) {
+            if (_selectedIds.contains(f.id)) {
+              f.isActive = false;
+              f.updatedAt = DateTime.now();
+            }
+          }
+          _selectedIds.clear();
+          _isSelectionMode = false;
+        });
+      } else {
+        debugPrint('Failed to batch update floats: ${response.body}');
       }
-      _selectedIds.clear();
-      _isSelectionMode = false;
-    });
+    } catch (e) {
+      debugPrint('Error batch updating floats: $e');
+    }
   }
 
   void _showFloatDetailsSheet(FloatModel float) {
     final TextEditingController editController = TextEditingController(text: float.text);
+    bool localIsActive = float.isActive;
 
     showModalBottomSheet(
       context: context,
@@ -353,12 +441,6 @@ class FloatsBodyState extends State<FloatsBody> {
                 TextField(
                   controller: editController,
                   maxLines: 4,
-                  onChanged: (text) {
-                    setState(() {
-                      float.text = text.trim();
-                      float.updatedAt = DateTime.now();
-                    });
-                  },
                   style: const TextStyle(
                     fontFamily: 'Open Sans',
                     fontSize: 16,
@@ -398,13 +480,11 @@ class FloatsBodyState extends State<FloatsBody> {
                       ),
                     ),
                     Switch(
-                      value: float.isActive,
+                      value: localIsActive,
                       onChanged: (val) {
                         setSheetState(() {
-                          float.isActive = val;
-                          float.updatedAt = DateTime.now();
+                          localIsActive = val;
                         });
-                        setState(() {}); // refresh list view items opacity
                       },
                       activeThumbColor: Colors.white,
                       activeTrackColor: const Color(0xFF2F6FF2),
@@ -414,7 +494,60 @@ class FloatsBodyState extends State<FloatsBody> {
                   ],
                 ),
                 const Divider(color: Color(0xFFEEEEEE), height: 16),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final updatedText = editController.text.trim();
+                      if (updatedText.isNotEmpty) {
+                        Navigator.pop(ctx);
+                        try {
+                          final response = await http.put(
+                            Uri.parse('${AppConfig.backendUrl}/api/v1/users/$_userId/floats/${float.id}'),
+                            headers: {'Content-Type': 'application/json'},
+                            body: jsonEncode({
+                              'text': updatedText,
+                              'isActive': localIsActive,
+                            }),
+                          );
+                          if (response.statusCode == 200) {
+                            final Map<String, dynamic> body = jsonDecode(response.body);
+                            if (body['success'] == true && body['data'] != null) {
+                              setState(() {
+                                final index = _floats.indexWhere((f) => f.id == float.id);
+                                if (index != -1) {
+                                  _floats[index] = FloatModel.fromJson(body['data']);
+                                }
+                              });
+                            }
+                          } else {
+                            debugPrint('Failed to update float: ${response.body}');
+                          }
+                        } catch (e) {
+                          debugPrint('Error updating float: $e');
+                        }
+                      } else {
+                        Navigator.pop(ctx);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF5B24),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text(
+                      'Save Changes',
+                      style: TextStyle(
+                        fontFamily: 'Open Sans',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -632,43 +765,49 @@ class FloatsBodyState extends State<FloatsBody> {
       children: [
         _buildSortFilterHeader(),
         Expanded(
-          child: list.isEmpty
-              ? _buildEmptyState()
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                  itemCount: list.length,
-                  itemBuilder: (context, index) {
-                    final float = list[index];
-                    final isSelected = _selectedIds.contains(float.id);
-                    return _FloatTile(
-                      float: float,
-                      isSelectionMode: _isSelectionMode,
-                      isSelected: isSelected,
-                      onSelectChanged: (val) {
-                        setState(() {
-                          if (val == true) {
-                            _selectedIds.add(float.id);
-                          } else {
-                            _selectedIds.remove(float.id);
-                          }
-                        });
-                      },
-                      onTap: () {
-                        if (_isSelectionMode) {
-                          setState(() {
-                            if (isSelected) {
-                              _selectedIds.remove(float.id);
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF5B24)),
+                  ),
+                )
+              : list.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                      itemCount: list.length,
+                      itemBuilder: (context, index) {
+                        final float = list[index];
+                        final isSelected = _selectedIds.contains(float.id);
+                        return _FloatTile(
+                          float: float,
+                          isSelectionMode: _isSelectionMode,
+                          isSelected: isSelected,
+                          onSelectChanged: (val) {
+                            setState(() {
+                              if (val == true) {
+                                _selectedIds.add(float.id);
+                              } else {
+                                _selectedIds.remove(float.id);
+                              }
+                            });
+                          },
+                          onTap: () {
+                            if (_isSelectionMode) {
+                              setState(() {
+                                if (isSelected) {
+                                  _selectedIds.remove(float.id);
+                                } else {
+                                  _selectedIds.add(float.id);
+                                }
+                              });
                             } else {
-                              _selectedIds.add(float.id);
+                              _showFloatDetailsSheet(float);
                             }
-                          });
-                        } else {
-                          _showFloatDetailsSheet(float);
-                        }
+                          },
+                        );
                       },
-                    );
-                  },
-                ),
+                    ),
         ),
       ],
     );
