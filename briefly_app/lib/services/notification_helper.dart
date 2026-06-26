@@ -1,4 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class NotificationHelper {
   static final FlutterLocalNotificationsPlugin _plugin =
@@ -8,6 +10,7 @@ class NotificationHelper {
   static void Function(String payload)? onNotificationTap;
 
   static Future<void> init() async {
+    if (kIsWeb || !Platform.isAndroid) return;
     const androidSettings = AndroidInitializationSettings('ic_notification');
     const initSettings = InitializationSettings(android: androidSettings);
 
@@ -23,6 +26,7 @@ class NotificationHelper {
   }
 
   static Future<void> requestPermissions() async {
+    if (kIsWeb || !Platform.isAndroid) return;
     final android = _plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
@@ -37,6 +41,7 @@ class NotificationHelper {
     required String body,
     String? payload,
   }) async {
+    if (kIsWeb || !Platform.isAndroid) return;
     const androidDetails = AndroidNotificationDetails(
       'briefly_channel_id',
       'Briefly Notifications',
@@ -59,6 +64,7 @@ class NotificationHelper {
     required String title,
     required String body,
   }) async {
+    if (kIsWeb || !Platform.isAndroid) return;
     const androidDetails = AndroidNotificationDetails(
       'briefly_report_channel',
       'Daily Report',
@@ -79,6 +85,7 @@ class NotificationHelper {
 
   /// Call on app launch — returns payload of the notification that launched the app
   static Future<String?> getAppLaunchPayload() async {
+    if (kIsWeb || !Platform.isAndroid) return null;
     final details = await _plugin.getNotificationAppLaunchDetails();
     if (details?.didNotificationLaunchApp == true) {
       return details?.notificationResponse?.payload;
@@ -87,6 +94,7 @@ class NotificationHelper {
   }
 
   static Future<void> handleColdStart() async {
+    if (kIsWeb || !Platform.isAndroid) return;
     final payload = await getAppLaunchPayload();
     if (payload != null && payload.isNotEmpty && onNotificationTap != null) {
       onNotificationTap!(payload);

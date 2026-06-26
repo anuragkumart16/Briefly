@@ -7,6 +7,8 @@ import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import '../config.dart';
 import 'notification_helper.dart';
 import 'floats_sync_service.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 String _localDateKey(DateTime date) {
   final month = date.month.toString().padLeft(2, '0');
@@ -205,6 +207,7 @@ class BackgroundScheduler {
   static const int _defaultFloatsFrequencyHours = 2;
 
   static Future<void> restoreSavedSchedules() async {
+    if (kIsWeb || !Platform.isAndroid) return;
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getString('user_id') ?? '';
 
@@ -225,6 +228,7 @@ class BackgroundScheduler {
   }
 
   static Future<void> scheduleDailyReport(int hour, int minute) async {
+    if (kIsWeb || !Platform.isAndroid) return;
     await AndroidAlarmManager.cancel(_dailyReportAlarmId);
 
     final now = DateTime.now();
@@ -254,6 +258,7 @@ class BackgroundScheduler {
   }
 
   static Future<void> scheduleFloats(int frequencyHours, bool enabled) async {
+    if (kIsWeb || !Platform.isAndroid) return;
     await AndroidAlarmManager.cancel(_periodicFloatsAlarmId);
     if (!enabled || frequencyHours <= 0) return;
 
@@ -268,6 +273,7 @@ class BackgroundScheduler {
   }
 
   static Future<void> scheduleTestNotification() async {
+    if (kIsWeb || !Platform.isAndroid) return;
     await AndroidAlarmManager.cancel(_testSchedulerAlarmId);
     await AndroidAlarmManager.oneShot(
       const Duration(minutes: 1),
@@ -279,6 +285,7 @@ class BackgroundScheduler {
   }
 
   static Future<void> scheduleFloatsSync() async {
+    if (kIsWeb || !Platform.isAndroid) return;
     await AndroidAlarmManager.cancel(_syncFloatsAlarmId);
     await AndroidAlarmManager.periodic(
       const Duration(minutes: 15),
@@ -291,6 +298,7 @@ class BackgroundScheduler {
   }
 
   static Future<void> cancelAll() async {
+    if (kIsWeb || !Platform.isAndroid) return;
     await AndroidAlarmManager.cancel(_dailyReportAlarmId);
     await AndroidAlarmManager.cancel(_periodicFloatsAlarmId);
     await AndroidAlarmManager.cancel(_testSchedulerAlarmId);

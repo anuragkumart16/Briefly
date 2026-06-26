@@ -12,13 +12,23 @@ const getLatestAppVersion = async (req: Request, res: Response) => {
     const platform = (req.query.platform as string) || "android";
 
     try {
-        const latest = await prisma.appVersion.findFirst({
+        let latest = await prisma.appVersion.findFirst({
             where: { platform },
             orderBy: { createdAt: "desc" }
         });
 
         if (!latest) {
-            return ApiResponse(res, 404, "No version information found for platform: " + platform);
+            latest = {
+                id: "default",
+                platform: platform,
+                version: "1.0.0",
+                buildNumber: 1,
+                url: "",
+                releaseNotes: "Initial release version",
+                mandatory: false,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
         }
 
         return ApiResponse(res, 200, "Latest version fetched successfully", {

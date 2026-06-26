@@ -7,16 +7,36 @@ import 'home_screen.dart';
 import 'report_screen.dart';
 import 'services/background_scheduler.dart';
 import 'splash_screen.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 /// Global navigator key so notification tap can navigate from outside widget tree
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AndroidAlarmManager.initialize();
-  await NotificationHelper.init();
-  await NotificationHelper.requestPermissions();
-  await BackgroundScheduler.restoreSavedSchedules();
+  try {
+    if (!kIsWeb && Platform.isAndroid) {
+      await AndroidAlarmManager.initialize();
+    }
+  } catch (e) {
+    debugPrint('Failed to initialize AndroidAlarmManager: $e');
+  }
+  try {
+    if (!kIsWeb && Platform.isAndroid) {
+      await NotificationHelper.init();
+      await NotificationHelper.requestPermissions();
+    }
+  } catch (e) {
+    debugPrint('Failed to initialize NotificationHelper: $e');
+  }
+  try {
+    if (!kIsWeb && Platform.isAndroid) {
+      await BackgroundScheduler.restoreSavedSchedules();
+    }
+  } catch (e) {
+    debugPrint('Failed to restore saved schedules: $e');
+  }
   runApp(const MyApp());
 
   NotificationHelper.onNotificationTap = (String? payload) async {
@@ -34,7 +54,13 @@ void main() async {
       );
     }
   };
-  await NotificationHelper.handleColdStart();
+  try {
+    if (!kIsWeb && Platform.isAndroid) {
+      await NotificationHelper.handleColdStart();
+    }
+  } catch (e) {
+    debugPrint('Failed to handle cold start: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {
