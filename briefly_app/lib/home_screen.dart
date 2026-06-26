@@ -100,33 +100,41 @@ class _HomeBodyState extends State<HomeBody> {
     if (urlString == null || urlString.isEmpty) return;
     try {
       final uri = Uri.parse(urlString);
-      // Try in-app Chrome Custom Tab first (always works for https), then external browser
-      final launched = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+      // Try a non-browser app first (opens Gmail if installed), fall back to Chrome Custom Tab
+      bool launched = false;
+      try {
+        launched = await launchUrl(uri, mode: LaunchMode.externalNonBrowserApplication);
+      } catch (_) {}
       if (!launched) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error opening link: $e')),
+          SnackBar(
+            content: Text('Error opening link: $e'),
+            backgroundColor: const Color(0xFFFF5B24),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         );
       }
-
     }
   }
 
+  // ── Section header — matches app's bold label style ──────────────────────
   Widget _buildSectionHeader(String title, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.only(top: 24, bottom: 12),
+      padding: const EdgeInsets.only(top: 24, bottom: 10),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFFFF5B24), size: 20),
+          Icon(icon, color: const Color(0xFFFF5B24), size: 17),
           const SizedBox(width: 8),
           Text(
             title,
             style: const TextStyle(
               fontFamily: 'Open Sans',
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
               color: Color(0xFF222222),
             ),
@@ -136,89 +144,140 @@ class _HomeBodyState extends State<HomeBody> {
     );
   }
 
+  // ── Email card ────────────────────────────────────────────────────────────
   Widget _buildEmailCard(Map<String, dynamic> email) {
     final from = email['from'] ?? 'Unknown Sender';
     final subject = email['subject'] ?? 'No Subject';
     final summary = email['summary'] ?? '';
     final link = email['link'];
+    final isHighPriority = email['priority'] == 'high';
 
-    return Card(
-      color: Colors.white,
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Color(0xFFEEEEEE)),
-      ),
-      child: InkWell(
-        onTap: () => _openEmailLink(link),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final displayName = RegExp(r'^(.+?)\s*<').firstMatch(from)?.group(1)?.trim() ?? from;
+    final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
+
+    return GestureDetector(
+      onTap: () => _openEmailLink(link),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F7FA),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Sender avatar
+            Container(
+              width: 38,
+              height: 38,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFF5B24),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  fontFamily: 'Open Sans',
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      from,
-                      maxLines: 1,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'Open Sans',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF222222),
+                          ),
+                        ),
+                      ),
+                      if (isHighPriority) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF5B24).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Action needed',
+                            style: TextStyle(
+                              fontFamily: 'Open Sans',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFFF5B24),
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(width: 6),
+                      const Icon(Icons.open_in_new_rounded, size: 13, color: Color(0xFFBBBBBB)),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subject,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Open Sans',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF444444),
+                    ),
+                  ),
+                  if (summary.isNotEmpty) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      summary,
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontFamily: 'Open Sans',
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF222222),
+                        fontSize: 12,
+                        color: Color(0xFF606060),
+                        height: 1.45,
                       ),
                     ),
-                  ),
-                  const Icon(Icons.open_in_new_rounded, size: 16, color: Color(0xFF888888)),
+                  ],
                 ],
               ),
-              const SizedBox(height: 6),
-              Text(
-                subject,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontFamily: 'Open Sans',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF444444),
-                ),
-              ),
-              if (summary.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  summary,
-                  style: const TextStyle(
-                    fontFamily: 'Open Sans',
-                    fontSize: 12,
-                    color: Color(0xFF606060),
-                  ),
-                ),
-              ],
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
+  // ── Calendar event card ───────────────────────────────────────────────────
   Widget _buildEventCard(Map<String, dynamic> event) {
     final title = event['title'] ?? 'No Title';
     final timeStr = event['time'] ?? 'All Day';
     final summary = event['summary'] ?? '';
+    final location = event['location'] as String? ?? '';
+    final attendees = event['attendees'] as String? ?? '';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEEEEEE)),
+        color: const Color(0xFFF5F7FA),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,30 +285,32 @@ class _HomeBodyState extends State<HomeBody> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Time chip
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF2EE),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE0E0E0)),
                 ),
                 child: Text(
                   timeStr,
                   style: const TextStyle(
                     fontFamily: 'Open Sans',
                     fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFFF5B24),
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF444444),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   title,
                   style: const TextStyle(
                     fontFamily: 'Open Sans',
                     fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
                     color: Color(0xFF222222),
                   ),
                 ),
@@ -257,14 +318,57 @@ class _HomeBodyState extends State<HomeBody> {
             ],
           ),
           if (summary.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               summary,
               style: const TextStyle(
                 fontFamily: 'Open Sans',
                 fontSize: 12,
                 color: Color(0xFF606060),
+                height: 1.45,
               ),
+            ),
+          ],
+          if (location.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF888888)),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    location,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Open Sans',
+                      fontSize: 12,
+                      color: Color(0xFF888888),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (attendees.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.people_outline_rounded, size: 13, color: Color(0xFF888888)),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    attendees,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Open Sans',
+                      fontSize: 12,
+                      color: Color(0xFF888888),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ],
@@ -272,53 +376,112 @@ class _HomeBodyState extends State<HomeBody> {
     );
   }
 
+  // ── Task tile ─────────────────────────────────────────────────────────────
   Widget _buildTaskTile(Map<String, dynamic> task) {
     final title = task['title'] ?? 'Untitled Task';
     final summary = task['summary'] ?? '';
+    final deadline = task['deadline'] as String? ?? '';
     final isCompleted = task['status'] == 'completed';
+    final isOverdue = deadline.toLowerCase().contains('overdue');
+    final isDueToday = deadline.toLowerCase().contains('due today');
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBFBFB),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: isCompleted ? Colors.green : const Color(0xFFFF5B24),
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'Open Sans',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF222222),
-                    decoration: isCompleted ? TextDecoration.lineThrough : null,
-                  ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Icon(
+                  isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                  color: isCompleted ? const Color(0xFF888888) : const Color(0xFFFF5B24),
+                  size: 19,
                 ),
-                if (summary.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    summary,
-                    style: const TextStyle(
-                      fontFamily: 'Open Sans',
-                      fontSize: 12,
-                      color: Color(0xFF606060),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontFamily: 'Open Sans',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isCompleted ? const Color(0xFFAAAAAA) : const Color(0xFF222222),
+                        decoration: isCompleted ? TextDecoration.lineThrough : null,
+                      ),
                     ),
-                  ),
-                ],
-              ],
+                    if (summary.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        summary,
+                        style: const TextStyle(
+                          fontFamily: 'Open Sans',
+                          fontSize: 12,
+                          color: Color(0xFF606060),
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                    if (deadline.isNotEmpty && !isCompleted) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isOverdue
+                              ? const Color(0xFFFFEEEE)
+                              : isDueToday
+                                  ? const Color(0xFFFFF3E0)
+                                  : const Color(0xFFEEF2FF),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          deadline,
+                          style: TextStyle(
+                            fontFamily: 'Open Sans',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: isOverdue
+                                ? const Color(0xFFCC0000)
+                                : isDueToday
+                                    ? const Color(0xFFE65100)
+                                    : const Color(0xFF3949AB),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+          const SizedBox(height: 10),
+        ],
+      ),
+    );
+  }
+
+  // ── Empty state per section ───────────────────────────────────────────────
+  Widget _buildEmptyState(String message, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: const Color(0xFFCCCCCC)),
+          const SizedBox(width: 8),
+          Text(
+            message,
+            style: const TextStyle(
+              fontFamily: 'Open Sans',
+              fontSize: 13,
+              color: Color(0xFFAAAAAA),
             ),
           ),
         ],
@@ -326,117 +489,135 @@ class _HomeBodyState extends State<HomeBody> {
     );
   }
 
+  // ── Main report content ───────────────────────────────────────────────────
   Widget _buildReportContent() {
     final data = _reportData!;
-    final summary = data['summary'] ?? '';
-    final wisdom = data['wisdom'] ?? '';
+    final summary = data['summary'] as String? ?? '';
+    final wisdom = data['wisdom'] as String? ?? '';
     final List<dynamic> calendar = data['calendar'] ?? [];
     final List<dynamic> tasks = data['tasks'] ?? [];
     final List<dynamic> emails = data['emails'] ?? [];
+
+    final hasCalendar = data.containsKey('calendar');
+    final hasTasks = data.containsKey('tasks');
+    final hasEmails = data.containsKey('emails');
+    final hasWisdom = data.containsKey('wisdom');
 
     return RefreshIndicator(
       onRefresh: _fetchDailyReport,
       color: const Color(0xFFFF5B24),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
-          // Briefing Header
+          // ── Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Today\'s Briefing',
-                style: TextStyle(
-                  fontFamily: 'Open Sans',
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF222222),
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Today\'s Briefing',
+                    style: TextStyle(
+                      fontFamily: 'Open Sans',
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF222222),
+                    ),
+                  ),
+                  Text(
+                    _formattedDate(),
+                    style: const TextStyle(
+                      fontFamily: 'Open Sans',
+                      fontSize: 13,
+                      color: Color(0xFF888888),
+                    ),
+                  ),
+                ],
               ),
               IconButton(
                 icon: const Icon(Icons.refresh_rounded, color: Color(0xFFFF5B24)),
                 onPressed: _fetchDailyReport,
+                tooltip: 'Refresh',
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // AI Cohesive Summary Card
+          // ── AI summary card (dark, branded)
           if (summary.isNotEmpty)
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFFFFF2EE), Color(0xFFFFFDFD)],
+                  colors: [Color(0xFF1C1C2E), Color(0xFF2D1B4E)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFFFE0D5)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.auto_awesome_rounded, color: Color(0xFFFF5B24), size: 18),
-                      const SizedBox(width: 8),
-                      Text(
-                        'AI Daily Summary'.toUpperCase(),
-                        style: const TextStyle(
+                      const Icon(Icons.auto_awesome_rounded, color: Color(0xFFFF5B24), size: 14),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'AI SUMMARY',
+                        style: TextStyle(
                           fontFamily: 'Open Sans',
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
                           color: Color(0xFFFF5B24),
-                          letterSpacing: 1.1,
+                          letterSpacing: 1.2,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Text(
                     summary,
                     style: const TextStyle(
                       fontFamily: 'Open Sans',
                       fontSize: 14,
-                      color: Color(0xFF333333),
-                      height: 1.5,
+                      color: Color(0xFFDDDDDD),
+                      height: 1.6,
                     ),
                   ),
                 ],
               ),
             ),
 
-          // AI Wisdom Card
-          if (wisdom.isNotEmpty) ...[
-            const SizedBox(height: 16),
+          // ── Wisdom card — matches app's F5F7FA card style
+          if (hasWisdom && wisdom.isNotEmpty) ...[
+            const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
               decoration: BoxDecoration(
                 color: const Color(0xFFF5F7FA),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE5E8EC)),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFF9A825), size: 22),
-                  const SizedBox(width: 12),
+                  const Text('💡', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Wisdom reminder',
+                          'Wisdom',
                           style: TextStyle(
                             fontFamily: 'Open Sans',
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF707070),
+                            color: Color(0xFF888888),
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           wisdom,
                           style: const TextStyle(
@@ -444,7 +625,7 @@ class _HomeBodyState extends State<HomeBody> {
                             fontSize: 13,
                             fontStyle: FontStyle.italic,
                             color: Color(0xFF444444),
-                            height: 1.4,
+                            height: 1.5,
                           ),
                         ),
                       ],
@@ -455,46 +636,47 @@ class _HomeBodyState extends State<HomeBody> {
             ),
           ],
 
-          // Calendar Events Section
-          _buildSectionHeader('Schedule Events', Icons.calendar_today_rounded),
-          if (calendar.isEmpty)
-            const Text(
-              'No events scheduled for today.',
-              style: TextStyle(fontFamily: 'Open Sans', fontSize: 13, color: Colors.grey),
-            )
-          else
-            ...calendar.map((e) => _buildEventCard(e as Map<String, dynamic>)),
+          // ── Calendar section
+          if (hasCalendar) ...[
+            _buildSectionHeader('Schedule', Icons.calendar_today_rounded),
+            if (calendar.isEmpty)
+              _buildEmptyState('No events scheduled for today', Icons.event_busy_rounded)
+            else
+              ...calendar.map((e) => _buildEventCard(e as Map<String, dynamic>)),
+          ],
 
-          // Tasks Section
-          _buildSectionHeader('Action Tasks', Icons.task_alt_rounded),
-          if (tasks.isEmpty)
-            const Text(
-              'No tasks pending for today.',
-              style: TextStyle(fontFamily: 'Open Sans', fontSize: 13, color: Colors.grey),
-            )
-          else
-            ...tasks.map((t) => _buildTaskTile(t as Map<String, dynamic>)),
+          // ── Tasks section
+          if (hasTasks) ...[
+            _buildSectionHeader('Tasks', Icons.task_alt_rounded),
+            if (tasks.isEmpty)
+              _buildEmptyState('No tasks pending', Icons.check_circle_outline_rounded)
+            else
+              Container(
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F7FA),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: tasks.map((t) => _buildTaskTile(t as Map<String, dynamic>)).toList(),
+                ),
+              ),
+          ],
 
-          // Emails Section
-          _buildSectionHeader('Unread Emails', Icons.mail_outline_rounded),
-          if (emails.isEmpty)
-            const Text(
-              'No unread emails from today.',
-              style: TextStyle(fontFamily: 'Open Sans', fontSize: 13, color: Colors.grey),
-            )
-          else
-            ...emails.map((e) => _buildEmailCard(e as Map<String, dynamic>)),
-          
-          const SizedBox(height: 16),
-          // Clear Report Button
+          // ── Emails section
+          if (hasEmails) ...[
+            _buildSectionHeader('Unread Emails', Icons.mail_outline_rounded),
+            if (emails.isEmpty)
+              _buildEmptyState('No important emails today', Icons.drafts_rounded)
+            else
+              ...emails.map((e) => _buildEmailCard(e as Map<String, dynamic>)),
+          ],
+
+          const SizedBox(height: 20),
           OutlinedButton(
-            onPressed: () {
-              setState(() {
-                _reportData = null;
-              });
-            },
+            onPressed: () => setState(() => _reportData = null),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFCCCCCC)),
+              side: const BorderSide(color: Color(0xFFDDDDDD)),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
@@ -502,14 +684,21 @@ class _HomeBodyState extends State<HomeBody> {
               'Go Back',
               style: TextStyle(
                 fontFamily: 'Open Sans',
-                color: Color(0xFF666666),
-                fontWeight: FontWeight.bold,
+                color: Color(0xFF888888),
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _formattedDate() {
+    final now = DateTime.now();
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
   }
 
   @override
