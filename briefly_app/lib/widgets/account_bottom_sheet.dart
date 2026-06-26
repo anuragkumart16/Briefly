@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../auth_screen.dart';
 
 class AccountBottomSheet extends StatelessWidget {
   final String userName;
   final String userEmail;
+  final String? userPictureUrl;
   final VoidCallback onSettingsTap;
 
   const AccountBottomSheet({
     super.key,
     required this.userName,
     required this.userEmail,
+    this.userPictureUrl,
     required this.onSettingsTap,
   });
 
@@ -22,6 +25,13 @@ class AccountBottomSheet extends StatelessWidget {
   Future<void> _handleSignOut(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear(); // Clear session
+    try {
+      final googleSignIn = GoogleSignIn();
+      await googleSignIn.signOut();
+      await googleSignIn.disconnect();
+    } catch (e) {
+      debugPrint('Error signing out of Google: $e');
+    }
     if (context.mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AuthScreen()),
@@ -76,17 +86,36 @@ class AccountBottomSheet extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Text(
-                    _initials,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Open Sans',
-                    ),
-                  ),
-                ),
+                child: userPictureUrl != null && userPictureUrl!.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(30),
+                        child: Image.network(
+                          userPictureUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Center(
+                            child: Text(
+                              _initials,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Open Sans',
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: Text(
+                          _initials,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Open Sans',
+                          ),
+                        ),
+                      ),
               ),
               const SizedBox(width: 16),
               Expanded(

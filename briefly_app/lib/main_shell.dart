@@ -36,6 +36,7 @@ class _MainShellState extends State<MainShell> {
   // User profile details
   String _userName = 'Anurag';
   String _userEmail = 'anuragkumartiwari12@gmail.com';
+  String? _userPictureUrl;
 
   String get _userInitials {
     if (_userName.isEmpty) return 'A';
@@ -68,6 +69,7 @@ class _MainShellState extends State<MainShell> {
     final floatsFrequencyHours = prefs.getInt('floats_frequency_hours') ?? 2;
     final name = prefs.getString('user_name') ?? 'Anurag';
     final email = prefs.getString('user_email') ?? 'anuragkumartiwari12@gmail.com';
+    final pictureUrl = prefs.getString('user_picture');
     if (mounted) {
       setState(() {
         if (hour != null && minute != null) {
@@ -77,6 +79,7 @@ class _MainShellState extends State<MainShell> {
         _floatsFrequencyHours = floatsFrequencyHours;
         _userName = name;
         _userEmail = email;
+        _userPictureUrl = pictureUrl;
       });
     }
   }
@@ -420,6 +423,7 @@ class _MainShellState extends State<MainShell> {
       appBar: AppTopBar(
         title: 'Briefly',
         userInitials: _userInitials,
+        userPictureUrl: _userPictureUrl,
         onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
         onAccountTap: () {
           showModalBottomSheet(
@@ -430,6 +434,7 @@ class _MainShellState extends State<MainShell> {
               return AccountBottomSheet(
                 userName: _userName,
                 userEmail: _userEmail,
+                userPictureUrl: _userPictureUrl,
                 onSettingsTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(

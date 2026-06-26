@@ -68,10 +68,27 @@ const googleAuth = async (req: Request, res: Response) => {
         const payloadJson = Buffer.from(payloadBase64, "base64").toString("utf-8");
         const payload = JSON.parse(payloadJson);
         
-        const { email, name, picture } = payload;
+        const { email, name } = payload;
+        let picture = payload.picture;
 
         if (!email) {
             return ApiResponse(res, 400, "Google ID token did not contain email address");
+        }
+
+        if (!picture && access_token) {
+            try {
+                const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                    headers: {
+                        Authorization: `Bearer ${access_token}`,
+                    },
+                });
+                if (userInfoResponse.ok) {
+                    const userInfo = await userInfoResponse.json();
+                    picture = userInfo.picture;
+                }
+            } catch (err) {
+                console.error("Failed to fetch userinfo from Google:", err);
+            }
         }
 
         const tokenExpiry = expires_in ? new Date(Date.now() + expires_in * 1000) : null;
@@ -95,6 +112,18 @@ const googleAuth = async (req: Request, res: Response) => {
                 tokenExpiry,
             },
         });
+
+        // Ensure default settings exist for the user
+        const existingSettings = await prisma.settings.findUnique({
+            where: { userId: user.id }
+        });
+        if (!existingSettings) {
+            await prisma.settings.create({
+                data: {
+                    userId: user.id
+                }
+            });
+        }
 
         console.log(`User ${email} authenticated successfully.`);
 

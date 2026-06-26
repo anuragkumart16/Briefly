@@ -23,4 +23,35 @@ model User {
   tokenExpiry  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  settings     Settings?
+  feedbacks    Feedback[]
+}
+
+model Settings {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId                String   @unique @db.ObjectId
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  markEmailsUnread      Boolean  @default(true)
+  sendFloatsSilent      Boolean  @default(true)
+  floatsFrequencyHours  Int      @default(2)
+  floatsEnabled         Boolean  @default(true)
+  reportIncludeTasks    Boolean  @default(true)
+  reportIncludeCalendar Boolean  @default(true)
+  reportIncludeEmails   Boolean  @default(true)
+  reportIncludeFloats   Boolean  @default(true)
+  reportHour            Int      @default(20)
+  reportMinute          Int      @default(30)
+  silentStartHour       Int      @default(12)
+  silentStartMinute     Int      @default(0)
+  silentEndHour         Int      @default(6)
+  silentEndMinute       Int      @default(0)
+}
+
+model Feedback {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String?  @db.ObjectId
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email     String?
+  text      String
+  createdAt DateTime @default(now())
 }

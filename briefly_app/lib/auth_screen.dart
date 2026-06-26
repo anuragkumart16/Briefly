@@ -39,9 +39,29 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _saveAndContinue() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('report_hour', _selectedTime.hour);
-    await prefs.setInt('report_minute', _selectedTime.minute);
+    final userId = prefs.getString('user_id') ?? '';
+    final hour = _selectedTime.hour;
+    final minute = _selectedTime.minute;
+
+    if (userId.isNotEmpty) {
+      try {
+        await http.put(
+          Uri.parse('http://localhost:3000/api/v1/users/$userId/settings'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'reportHour': hour,
+            'reportMinute': minute,
+          }),
+        );
+      } catch (e) {
+        debugPrint('Failed to sync report time to backend settings: $e');
+      }
+    }
+
+    await prefs.setInt('report_hour', hour);
+    await prefs.setInt('report_minute', minute);
     await prefs.setBool('time_saved', true);
+    
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -52,6 +72,8 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _onGooglePressed() async {
     final GoogleSignIn googleSignIn = GoogleSignIn(
       scopes: [
+        'email',
+        'profile',
         'https://www.googleapis.com/auth/gmail.modify',
         'https://www.googleapis.com/auth/calendar',
         'https://www.googleapis.com/auth/tasks',

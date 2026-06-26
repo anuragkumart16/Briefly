@@ -28,6 +28,9 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   /// Optional user initials to show in the account avatar.
   final String? userInitials;
 
+  /// Optional profile picture URL to show in the account avatar.
+  final String? userPictureUrl;
+
   const AppTopBar({
     super.key,
     required this.title,
@@ -38,6 +41,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.trailingWidget,
     this.showBackButton = false,
     this.userInitials,
+    this.userPictureUrl,
   });
 
   bool get _isSearchMode => searchController != null;
@@ -139,17 +143,36 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
                       ),
                     ],
                   ),
-                  child: Center(
-                    child: Text(
-                      userInitials ?? 'A',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Open Sans',
-                      ),
-                    ),
-                  ),
+                  child: userPictureUrl != null && userPictureUrl!.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: Image.network(
+                            userPictureUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Center(
+                              child: Text(
+                                userInitials ?? 'A',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Open Sans',
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            userInitials ?? 'A',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Open Sans',
+                            ),
+                          ),
+                        ),
                 ),
                 Positioned(
                   right: -1,

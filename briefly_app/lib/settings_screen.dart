@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'auth_screen.dart';
 import 'widgets/app_top_bar.dart';
 import 'widgets/account_bottom_sheet.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -34,6 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Account details (Read-only as per instructions, taken from auth)
   String _name = 'Anurag';
   String _email = 'anuragkumartiwari12@gmail.com';
+  String? _pictureUrl;
 
   String get _userInitials {
     if (_name.isEmpty) return 'A';
@@ -66,20 +70,101 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _silentEndHour = prefs.getInt('silent_end_hour') ?? 6;
       _silentEndMinute = prefs.getInt('silent_end_minute') ?? 0;
 
-      // In case they were saved in auth or main shell
       _name = prefs.getString('user_name') ?? 'Anurag';
       _email = prefs.getString('user_email') ?? 'anuragkumartiwari12@gmail.com';
+      _pictureUrl = prefs.getString('user_picture');
     });
+
+    final userId = prefs.getString('user_id') ?? '';
+    if (userId.isNotEmpty) {
+      try {
+        final response = await http.get(
+          Uri.parse('http://localhost:3000/api/v1/users/$userId/settings'),
+        );
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> body = jsonDecode(response.body);
+          if (body['success'] == true && body['data'] != null) {
+            final data = body['data'];
+            setState(() {
+              _markEmailsUnread = data['markEmailsUnread'] ?? _markEmailsUnread;
+              _sendFloatsSilent = data['sendFloatsSilent'] ?? _sendFloatsSilent;
+              _floatsFrequencyHours = data['floatsFrequencyHours'] ?? _floatsFrequencyHours;
+              _floatsEnabled = data['floatsEnabled'] ?? _floatsEnabled;
+              _reportIncludeTasks = data['reportIncludeTasks'] ?? _reportIncludeTasks;
+              _reportIncludeCalendar = data['reportIncludeCalendar'] ?? _reportIncludeCalendar;
+              _reportIncludeEmails = data['reportIncludeEmails'] ?? _reportIncludeEmails;
+              _reportIncludeFloats = data['reportIncludeFloats'] ?? _reportIncludeFloats;
+              _reportHour = data['reportHour'] ?? _reportHour;
+              _reportMinute = data['reportMinute'] ?? _reportMinute;
+              _silentStartHour = data['silentStartHour'] ?? _silentStartHour;
+              _silentStartMinute = data['silentStartMinute'] ?? _silentStartMinute;
+              _silentEndHour = data['silentEndHour'] ?? _silentEndHour;
+              _silentEndMinute = data['silentEndMinute'] ?? _silentEndMinute;
+            });
+
+            await prefs.setBool('mark_emails_unread', _markEmailsUnread);
+            await prefs.setBool('send_floats_silent', _sendFloatsSilent);
+            await prefs.setInt('floats_frequency_hours', _floatsFrequencyHours);
+            await prefs.setBool('floats_enabled', _floatsEnabled);
+            await prefs.setBool('report_include_tasks', _reportIncludeTasks);
+            await prefs.setBool('report_include_calendar', _reportIncludeCalendar);
+            await prefs.setBool('report_include_emails', _reportIncludeEmails);
+            await prefs.setBool('report_include_floats', _reportIncludeFloats);
+            await prefs.setInt('report_hour', _reportHour);
+            await prefs.setInt('report_minute', _reportMinute);
+            await prefs.setInt('silent_start_hour', _silentStartHour);
+            await prefs.setInt('silent_start_minute', _silentStartMinute);
+            await prefs.setInt('silent_end_hour', _silentEndHour);
+            await prefs.setInt('silent_end_minute', _silentEndMinute);
+          }
+        }
+      } catch (e) {
+        debugPrint('Failed to load settings from backend: $e');
+      }
+    }
+  }
+
+  String _toCamelCase(String snakeCase) {
+    List<String> parts = snakeCase.split('_');
+    if (parts.isEmpty) return '';
+    String camel = parts[0];
+    for (int i = 1; i < parts.length; i++) {
+      if (parts[i].isNotEmpty) {
+        camel += parts[i][0].toUpperCase() + parts[i].substring(1);
+      }
+    }
+    return camel;
+  }
+
+  Future<void> _syncSetting(String key, dynamic value) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('user_id') ?? '';
+    if (userId.isEmpty) return;
+
+    final backendKey = _toCamelCase(key);
+    if (backendKey.isEmpty || backendKey == 'timeSaved') return;
+
+    try {
+      await http.put(
+        Uri.parse('http://localhost:3000/api/v1/users/$userId/settings'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({backendKey: value}),
+      );
+    } catch (e) {
+      debugPrint('Failed to sync setting $key to backend: $e');
+    }
   }
 
   Future<void> _saveBool(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
+    await _syncSetting(key, value);
   }
 
   Future<void> _saveInt(String key, int value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(key, value);
+    await _syncSetting(key, value);
   }
 
   String _formattedTime(int hour, int minute) {
@@ -384,9 +469,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
                 navigator.pop();
+                
                 final prefs = await SharedPreferences.getInstance();
+                final userId = prefs.getString('user_id') ?? '';
+                
+                if (userId.isNotEmpty) {
+                  try {
+                    final response = await http.delete(
+                      Uri.parse('http://localhost:3000/api/v1/users/$userId'),
+                    );
+                    if (response.statusCode != 200) {
+                      scaffoldMessenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Failed to delete account from server. Please try again.', style: TextStyle(fontFamily: 'Open Sans')),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                  } catch (e) {
+                    debugPrint('Error deleting account: $e');
+                    scaffoldMessenger.showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $e. Please check your connection.', style: TextStyle(fontFamily: 'Open Sans')),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+                }
+
                 await prefs.clear();
+                try {
+                  final googleSignIn = GoogleSignIn();
+                  await googleSignIn.signOut();
+                  await googleSignIn.disconnect();
+                } catch (e) {
+                  debugPrint('Error signing out of Google: $e');
+                }
+
                 navigator.pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const AuthScreen()),
                   (route) => false,
@@ -514,6 +637,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: 'Settings',
         showBackButton: true,
         userInitials: _userInitials,
+        userPictureUrl: _pictureUrl,
         onAccountTap: () {
           showModalBottomSheet(
             context: context,
@@ -523,6 +647,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               return AccountBottomSheet(
                 userName: _name,
                 userEmail: _email,
+                userPictureUrl: _pictureUrl,
                 onSettingsTap: () {
                   // Already on settings screen
                 },
