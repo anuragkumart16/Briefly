@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'home_screen.dart';
+import 'config.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -14,7 +15,7 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  static const String _googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+  static const String _googleServerClientId = AppConfig.googleServerClientId;
 
   TimeOfDay _selectedTime = const TimeOfDay(hour: 20, minute: 30);
 
@@ -46,7 +47,7 @@ class _AuthScreenState extends State<AuthScreen> {
     if (userId.isNotEmpty) {
       try {
         await http.put(
-          Uri.parse('http://localhost:3000/api/v1/users/$userId/settings'),
+          Uri.parse('${AppConfig.backendUrl}/api/v1/users/$userId/settings'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'reportHour': hour,
@@ -109,7 +110,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       // POST authorization code to the backend service
       final response = await http.post(
-        Uri.parse('http://localhost:3000/api/v1/auth/google'),
+        Uri.parse('${AppConfig.backendUrl}/api/v1/auth/google'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'code': authCode}),
       );

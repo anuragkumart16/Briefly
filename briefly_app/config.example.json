@@ -1,3 +1,4 @@
 {
-  "GOOGLE_SERVER_CLIENT_ID": "YOUR_GOOGLE_SERVER_CLIENT_ID.apps.googleusercontent.com"
+  "GOOGLE_SERVER_CLIENT_ID": "YOUR_GOOGLE_SERVER_CLIENT_ID.apps.googleusercontent.com",
+  "BACKEND_URL": "http://localhost:3000"
 }

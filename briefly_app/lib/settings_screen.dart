@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'auth_screen.dart';
+import 'config.dart';
 import 'widgets/app_top_bar.dart';
 import 'widgets/account_bottom_sheet.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -79,7 +80,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (userId.isNotEmpty) {
       try {
         final response = await http.get(
-          Uri.parse('http://localhost:3000/api/v1/users/$userId/settings'),
+          Uri.parse('${AppConfig.backendUrl}/api/v1/users/$userId/settings'),
         );
         if (response.statusCode == 200) {
           final Map<String, dynamic> body = jsonDecode(response.body);
@@ -146,7 +147,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     try {
       await http.put(
-        Uri.parse('http://localhost:3000/api/v1/users/$userId/settings'),
+        Uri.parse('${AppConfig.backendUrl}/api/v1/users/$userId/settings'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({backendKey: value}),
       );
@@ -478,7 +479,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (userId.isNotEmpty) {
                   try {
                     final response = await http.delete(
-                      Uri.parse('http://localhost:3000/api/v1/users/$userId'),
+                      Uri.parse('${AppConfig.backendUrl}/api/v1/users/$userId'),
                     );
                     if (response.statusCode != 200) {
                       scaffoldMessenger.showSnackBar(
@@ -523,49 +524,163 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showFeedbackDialog() {
+  void _showFeedbackBottomSheet() {
     final controller = TextEditingController();
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text('Send Feedback', style: TextStyle(fontFamily: 'Open Sans', fontWeight: FontWeight.bold)),
-          content: TextField(
-            controller: controller,
-            maxLines: 4,
-            decoration: const InputDecoration(
-              hintText: 'Type your feedback here...',
-              border: OutlineInputBorder(),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFFF5B24)),
-              ),
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            style: const TextStyle(fontFamily: 'Open Sans'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontFamily: 'Open Sans')),
-            ),
-            TextButton(
-              onPressed: () {
-                final feedback = controller.text.trim();
-                Navigator.pop(context);
-                if (feedback.isNotEmpty && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Feedback sent! Thank you.', style: TextStyle(fontFamily: 'Open Sans')),
-                      backgroundColor: const Color(0xFFFF5B24),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEEEEE),
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                  );
-                }
-              },
-              child: const Text('Submit', style: TextStyle(color: Color(0xFFFF5B24), fontFamily: 'Open Sans')),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Send Feedback',
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF333333),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Tell us what you think or report issues. We read all feedback.',
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontSize: 14,
+                    color: Color(0xFF666666),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  maxLines: 4,
+                  autofocus: true,
+                  style: const TextStyle(
+                    fontFamily: 'Open Sans',
+                    color: Color(0xFF333333),
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: 'Type your feedback here...',
+                    hintStyle: TextStyle(color: Color(0xFF999999)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide(color: Color(0xFFFF5B24), width: 1.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontFamily: 'Open Sans',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final feedback = controller.text.trim();
+                        Navigator.pop(context);
+                        if (feedback.isNotEmpty) {
+                          final scaffoldMessenger = ScaffoldMessenger.of(context);
+                          final prefs = await SharedPreferences.getInstance();
+                          final userId = prefs.getString('user_id') ?? '';
+                          final email = prefs.getString('user_email') ?? '';
+                          
+                          try {
+                            final response = await http.post(
+                              Uri.parse('${AppConfig.backendUrl}/api/v1/feedback'),
+                              headers: {'Content-Type': 'application/json'},
+                              body: jsonEncode({
+                                'userId': userId.isNotEmpty ? userId : null,
+                                'email': email.isNotEmpty ? email : null,
+                                'text': feedback,
+                              }),
+                            );
+                            
+                            if (response.statusCode == 201 || response.statusCode == 200) {
+                              scaffoldMessenger.showSnackBar(
+                                SnackBar(
+                                  content: const Text('Feedback sent! Thank you.', style: TextStyle(fontFamily: 'Open Sans')),
+                                  backgroundColor: const Color(0xFFFF5B24),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                            } else {
+                              scaffoldMessenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text('Failed to submit feedback. Please try again.', style: TextStyle(fontFamily: 'Open Sans')),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            debugPrint('Error sending feedback: $e');
+                            scaffoldMessenger.showSnackBar(
+                              SnackBar(
+                                content: Text('Error: $e. Please check your connection.', style: TextStyle(fontFamily: 'Open Sans')),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF5B24),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                      child: const Text(
+                        'Submit',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Open Sans',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
@@ -792,7 +907,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Support & Feedback
                 _buildSectionHeader('Support & Feedback'),
                 _buildSectionCard([
-                  _buildTappableActionRow('Feedback', _showFeedbackDialog),
+                  _buildTappableActionRow('Feedback', _showFeedbackBottomSheet),
                   const Divider(color: Color(0xFFE5E7EB), height: 1),
                   _buildTappableActionRow('Help', _showHelpDialog),
                 ]),
