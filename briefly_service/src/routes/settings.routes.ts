@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSettings, updateSettings, deleteUser } from "../controllers/settings.controller";
+import { getSettings, updateSettings } from "../controllers/settings.controller";
 
 /**
  * Settings Routes.
@@ -12,7 +12,6 @@ router.route("/:userId/settings")
     .get(getSettings)
     .put(updateSettings);
 
-router.route("/:userId")
-    .delete(deleteUser);
+
 
 export default router;

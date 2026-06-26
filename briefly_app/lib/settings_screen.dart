@@ -3,10 +3,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'auth_screen.dart';
+import 'delete_account_screen.dart';
 import 'config.dart';
 import 'widgets/app_top_bar.dart';
 import 'widgets/account_bottom_sheet.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -454,73 +454,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _confirmDeleteAccount() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text('Delete Account', style: TextStyle(fontFamily: 'Open Sans', fontWeight: FontWeight.bold)),
-          content: const Text('This action is permanent. Do you want to proceed?', style: TextStyle(fontFamily: 'Open Sans')),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontFamily: 'Open Sans')),
-            ),
-            TextButton(
-              onPressed: () async {
-                final navigator = Navigator.of(context);
-                final scaffoldMessenger = ScaffoldMessenger.of(context);
-                navigator.pop();
-                
-                final prefs = await SharedPreferences.getInstance();
-                final userId = prefs.getString('user_id') ?? '';
-                
-                if (userId.isNotEmpty) {
-                  try {
-                    final response = await http.delete(
-                      Uri.parse('${AppConfig.backendUrl}/api/v1/users/$userId'),
-                    );
-                    if (response.statusCode != 200) {
-                      scaffoldMessenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Failed to delete account from server. Please try again.', style: TextStyle(fontFamily: 'Open Sans')),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                      return;
-                    }
-                  } catch (e) {
-                    debugPrint('Error deleting account: $e');
-                    scaffoldMessenger.showSnackBar(
-                      SnackBar(
-                        content: Text('Error: $e. Please check your connection.', style: TextStyle(fontFamily: 'Open Sans')),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
-                }
-
-                await prefs.clear();
-                try {
-                  final googleSignIn = GoogleSignIn();
-                  await googleSignIn.signOut();
-                  await googleSignIn.disconnect();
-                } catch (e) {
-                  debugPrint('Error signing out of Google: $e');
-                }
-
-                navigator.pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const AuthScreen()),
-                  (route) => false,
-                );
-              },
-              child: const Text('Delete', style: TextStyle(color: Colors.red, fontFamily: 'Open Sans')),
-            ),
-          ],
-        );
-      },
+  void _navigateToDeleteAccountScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const DeleteAccountScreen()),
     );
   }
 
@@ -900,7 +837,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Divider(color: Color(0xFFE5E7EB), height: 1),
                   _buildActionRow('Logout', const Color(0xFFEA4335), _confirmLogout),
                   const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildActionRow('Delete Account', const Color(0xFFEA4335), _confirmDeleteAccount),
+                  _buildActionRow('Delete Account', const Color(0xFFEA4335), _navigateToDeleteAccountScreen),
                 ]),
                 const SizedBox(height: 20),
 
