@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import ApiResponse from "../utils/response.util";
 import prisma from "../config/prisma";
+import { getValidGoogleToken } from "../utils/google-token.util";
 
 /**
  * Generate and Fetch the Daily Report.
@@ -43,58 +44,7 @@ const getDailyReport = async (req: Request, res: Response) => {
         const markEmailsUnread = settings?.markEmailsUnread     ?? true;
 
         // 2. Resolve a valid, non-expired Google Access Token
-        let accessToken = user.accessToken;
-        const now = new Date();
-
-        if (!user.tokenExpiry || user.tokenExpiry <= now) {
-            if (!user.refreshToken) {
-                return ApiResponse(res, 401, "Google refresh token is missing. Please sign in again.");
-            }
-
-            const clientId = process.env.GOOGLE_CLIENT_ID || "";
-            const clientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
-
-            if (!clientId || !clientSecret) {
-                console.error("Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in .env");
-                return ApiResponse(res, 500, "Server OAuth configuration error");
-            }
-
-            console.log(`Refreshing Google access token for user ${user.email}...`);
-
-            const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: new URLSearchParams({
-                    client_id: clientId,
-                    client_secret: clientSecret,
-                    refresh_token: user.refreshToken,
-                    grant_type: "refresh_token",
-                }),
-            });
-
-            const tokenData = await tokenResponse.json();
-
-            if (!tokenResponse.ok) {
-                console.error("Failed to refresh Google token:", tokenData);
-                return ApiResponse(res, 401, "Failed to refresh Google token. Please sign in again.");
-            }
-
-            accessToken = tokenData.access_token;
-            const expires_in = tokenData.expires_in;
-            const tokenExpiry = expires_in ? new Date(Date.now() + expires_in * 1000) : new Date(Date.now() + 3600 * 1000);
-
-            await prisma.user.update({
-                where: { id: userId },
-                data: {
-                    accessToken,
-                    tokenExpiry,
-                },
-            });
-
-            console.log(`Google access token refreshed successfully for user ${user.email}.`);
-        }
+        const accessToken = await getValidGoogleToken(userId);
 
         // 3. Fetch user's active Floats from DB (if enabled)
         let floats: { text: string }[] = [];
@@ -124,7 +74,11 @@ const getDailyReport = async (req: Request, res: Response) => {
                             end: event.end?.dateTime || event.end?.date || "",
                             location: event.location || "",
                             organizer: event.organizer?.displayName || event.organizer?.email || "",
-                            attendees: (event.attendees || []).map((a: any) => a.displayName || a.email).slice(0, 5),
+                            attendees: (event.attendees || []).map((a: any) => a.displayName || a.email),
+                            attachments: (event.attachments || []).map((att: any) => ({
+                                title: att.title || "Untitled Attachment",
+                                fileUrl: att.fileUrl || ""
+                            })),
                             conferenceLink: event.conferenceData?.entryPoints?.[0]?.uri || "",
                             status: event.status || "",
                         }));
@@ -204,7 +158,7 @@ const getDailyReport = async (req: Request, res: Response) => {
                         // Fetch up to 10 messages; AI will pick top 5 important ones
                         const limitMessages = gmailData.messages.slice(0, 10);
                         for (const msg of limitMessages) {
-                            const msgDetailsResponse = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date&metadataHeaders=List-Unsubscribe`, {
+                            const msgDetailsResponse = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`, {
                                 headers: { Authorization: `Bearer ${accessToken}` },
                             });
 
@@ -216,6 +170,24 @@ const getDailyReport = async (req: Request, res: Response) => {
                                 const date = headers.find((h: any) => h.name.toLowerCase() === "date")?.value || "";
                                 const hasUnsubscribe = headers.some((h: any) => h.name.toLowerCase() === "list-unsubscribe");
 
+                                const attachments: any[] = [];
+                                const checkParts = (partList: any[]) => {
+                                    for (const part of partList) {
+                                        if (part.filename && part.body?.attachmentId) {
+                                            attachments.push({
+                                                name: part.filename,
+                                                link: `https://mail.google.com/mail/u/0/#inbox/${msgDetails.threadId}`
+                                            });
+                                        }
+                                        if (part.parts) {
+                                            checkParts(part.parts);
+                                        }
+                                    }
+                                };
+                                if (msgDetails.payload?.parts) {
+                                    checkParts(msgDetails.payload.parts);
+                                }
+
                                 emails.push({
                                     id: msgDetails.id,
                                     threadId: msgDetails.threadId,
@@ -224,6 +196,7 @@ const getDailyReport = async (req: Request, res: Response) => {
                                     date,
                                     snippet: msgDetails.snippet || "",
                                     likelyNewsletter: hasUnsubscribe,
+                                    attachments,
                                 });
                             }
                         }
@@ -255,9 +228,9 @@ const getDailyReport = async (req: Request, res: Response) => {
             `  "summary": "A friendly, cohesive 2-3 sentence overview of the user's day, mentioning urgent deadlines and key events.",`,
         ];
         if (includeFloats)   schemaSections.push(`  "wisdom": "A short actionable insight synthesized from their Floats. Empty string if no floats.",`);
-        if (includeTasks)    schemaSections.push(`  "tasks": [ { "title": "Task title", "status": "needsAction|completed", "deadline": "Human-readable deadline e.g. 'Due today', 'Overdue by 2 days', 'Due in 3 days', or '' if no due date", "summary": "1-sentence description of what needs doing and why it matters." } ],`);
-        if (includeCalendar) schemaSections.push(`  "calendar": [ { "title": "Event title", "time": "e.g. 10:00 AM", "location": "Location or video link if available, else empty string", "attendees": "Comma-separated list of attendees if any, else empty string", "summary": "1-sentence summary covering what the event is and what to prepare." } ],`);
-        if (includeEmails)   schemaSections.push(`  "emails": [ { "id": "msg id", "threadId": "thread id", "subject": "Subject", "from": "Sender display name only", "priority": "high|medium", "summary": "2-sentence summary of what this email is about and what action (if any) is needed.", "link": "https://mail.google.com/mail/u/0/#inbox/{threadId}" } ]`);
+        if (includeTasks)    schemaSections.push(`  "tasks": [ { "title": "Task title", "status": "needsAction|completed", "deadline": "Human-readable deadline or 'No deadline' if not set", "details": "The details/description of the task if available, else empty string." } ],`);
+        if (includeCalendar) schemaSections.push(`  "calendar": [ { "title": "Event title", "time": "e.g. 10:00 AM", "location": "Location or video link if available, else empty string", "attendees": "Comma-separated list of attendees names/emails if any, else 'Only you'", "documentLinks": [ { "title": "Document title", "link": "Direct link" } ], "summary": "1-sentence summary covering what the event is and what to prepare." } ],`);
+        if (includeEmails)   schemaSections.push(`  "emails": [ { "id": "msg id", "threadId": "thread id", "subject": "Subject", "from": "Sender display name only", "priority": "high|medium", "crux": "Main point of the email", "whySent": "Why the email was sent", "summary": "Cohesive summary of the email", "link": "https://mail.google.com/mail/u/0/#inbox/{threadId}", "attachments": [ { "name": "Filename", "link": "Direct link" } ] } ]`);
 
         const systemPrompt = `You are Briefly, a personal AI executive assistant. Generate a focused daily report for the user.
 Here is today's data:
@@ -273,10 +246,10 @@ Rules:
 2. Return empty arrays [] for list fields that have no data.
 3. For email links use exactly: https://mail.google.com/mail/u/0/#inbox/{threadId}
 4. If wisdom is included but no floats exist, use a short general motivational insight.
-5. For tasks: always fill the "deadline" field. Use 'Overdue' if isOverdue=true, 'Due today' if isDueToday=true, 'Due in N days' if daysUntilDue>0, else empty string.
-6. For emails: EXCLUDE newsletters, marketing, and automated notifications (likelyNewsletter=true or obvious spam). Only include genuine human-sent or important system emails. Return at most 5.
-7. For emails: set "priority" to "high" if the email requires action or is time-sensitive, else "medium".
-8. For calendar: include location and attendees fields when available from the data; use empty string if missing.`;
+5. For tasks: always fill the "deadline" field. If there is no deadline, specify 'No deadline'. Include the task's notes/details in the "details" field if they are available.
+6. For calendar: if multiple people are joining, list their names/emails in "attendees". If there are documents/attachments, list them under "documentLinks".
+7. For emails: provide a good summary of each, tell the crux along with who sent it, why they sent it, and list attachment files under "attachments" with their links.
+8. Exclude emails that are newsletters, promotions, or spam.`;
 
         console.log("Calling Groq API (openai/gpt-oss-120b) to generate report summary...");
 

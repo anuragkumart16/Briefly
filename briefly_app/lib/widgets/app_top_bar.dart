@@ -65,7 +65,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: true,
       leading: showBackButton
           ? IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFFFF5B24)),
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFFF5B24)),
               onPressed: () => Navigator.of(context).pop(),
             )
           : IconButton(

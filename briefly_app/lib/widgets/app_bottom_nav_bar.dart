@@ -26,7 +26,7 @@ class AppBottomNavBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navItem(0, Icons.article_outlined, 'Report'),
+            _navItem(0, Icons.home_outlined, 'Home'),
             _navItem(1, Icons.layers_outlined, 'Floats'),
           ],
         ),

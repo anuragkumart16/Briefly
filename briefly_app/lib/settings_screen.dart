@@ -833,146 +833,151 @@ class _SettingsScreenState extends State<SettingsScreen> {
         },
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Report Settings
-                _buildSectionHeader('Report Settings'),
-                _buildSectionCard([
-                  _buildToggleRow('Mark emails unread', _markEmailsUnread, (
-                    val,
-                  ) {
-                    setState(() => _markEmailsUnread = val);
-                    _saveBool('mark_emails_unread', val);
-                  }),
-                  const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildTappableRow(
-                    'Report Time',
-                    _formattedTime(_reportHour, _reportMinute),
-                    _pickReportTime,
-                  ),
-                  const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildActionRow(
-                    'Test report in 1 minute',
-                    const Color(0xFFFF5B24),
-                    _scheduleTestNotification,
-                  ),
-                ]),
-                const SizedBox(height: 20),
+        child: RefreshIndicator(
+          onRefresh: _loadSettings,
+          color: const Color(0xFFFF5B24),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Report Settings
+                  _buildSectionHeader('Report Settings'),
+                  _buildSectionCard([
+                    _buildToggleRow('Mark emails unread', _markEmailsUnread, (
+                      val,
+                    ) {
+                      setState(() => _markEmailsUnread = val);
+                      _saveBool('mark_emails_unread', val);
+                    }),
+                    const Divider(color: Color(0xFFE5E7EB), height: 1),
+                    _buildTappableRow(
+                      'Report Time',
+                      _formattedTime(_reportHour, _reportMinute),
+                      _pickReportTime,
+                    ),
+                    const Divider(color: Color(0xFFE5E7EB), height: 1),
+                    _buildActionRow(
+                      'Test report in 1 minute',
+                      const Color(0xFFFF5B24),
+                      _scheduleTestNotification,
+                    ),
+                  ]),
+                  const SizedBox(height: 20),
 
-                // Report Content
-                _buildSectionHeader('Report Content'),
-                _buildSectionCard([
-                  _buildToggleRow('Add Tasks', _reportIncludeTasks, (val) {
-                    setState(() => _reportIncludeTasks = val);
-                    _saveBool('report_include_tasks', val);
-                  }),
-                  const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildToggleRow(
-                    'Add Calendar Events',
-                    _reportIncludeCalendar,
-                    (val) {
-                      setState(() => _reportIncludeCalendar = val);
-                      _saveBool('report_include_calendar', val);
-                    },
-                  ),
-                  const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildToggleRow('Add Emails', _reportIncludeEmails, (val) {
-                    setState(() => _reportIncludeEmails = val);
-                    _saveBool('report_include_emails', val);
-                  }),
-                  const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildToggleRow('Add Floats', _reportIncludeFloats, (val) {
-                    setState(() => _reportIncludeFloats = val);
-                    _saveBool('report_include_floats', val);
-                  }),
-                ]),
-                const SizedBox(height: 20),
+                  // Report Content
+                  _buildSectionHeader('Report Content'),
+                  _buildSectionCard([
+                    _buildToggleRow('Add Tasks', _reportIncludeTasks, (val) {
+                      setState(() => _reportIncludeTasks = val);
+                      _saveBool('report_include_tasks', val);
+                    }),
+                    const Divider(color: Color(0xFFE5E7EB), height: 1),
+                    _buildToggleRow(
+                      'Add Calendar Events',
+                      _reportIncludeCalendar,
+                      (val) {
+                        setState(() => _reportIncludeCalendar = val);
+                        _saveBool('report_include_calendar', val);
+                      },
+                    ),
+                    const Divider(color: Color(0xFFE5E7EB), height: 1),
+                    _buildToggleRow('Add Emails', _reportIncludeEmails, (val) {
+                      setState(() => _reportIncludeEmails = val);
+                      _saveBool('report_include_emails', val);
+                    }),
+                    const Divider(color: Color(0xFFE5E7EB), height: 1),
+                    _buildToggleRow('Add Floats', _reportIncludeFloats, (val) {
+                      setState(() => _reportIncludeFloats = val);
+                      _saveBool('report_include_floats', val);
+                    }),
+                  ]),
+                  const SizedBox(height: 20),
 
-                // Float Settings
-                _buildSectionHeader('Float Settings'),
-                _buildSectionCard([
-                  _buildToggleRow('Enable Floats', _floatsEnabled, (val) {
-                    setState(() => _floatsEnabled = val);
-                    _saveBool('floats_enabled', val);
-                  }),
-                  Opacity(
-                    opacity: _floatsEnabled ? 1.0 : 0.5,
-                    child: IgnorePointer(
-                      ignoring: !_floatsEnabled,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Divider(color: Color(0xFFE5E7EB), height: 1),
-                          _buildToggleRow(
-                            'Send Floats During Silent Hours',
-                            _sendFloatsSilent,
-                            (val) {
-                              setState(() => _sendFloatsSilent = val);
-                              _saveBool('send_floats_silent', val);
-                            },
-                          ),
-                          const Divider(color: Color(0xFFE5E7EB), height: 1),
-                          _buildTappableRow(
-                            'Frequency',
-                            'Every $_floatsFrequencyHours ${_floatsFrequencyHours == 1 ? 'Hour' : 'Hours'}',
-                            _showFrequencySheet,
-                          ),
-                          const Divider(color: Color(0xFFE5E7EB), height: 1),
-                          _buildTappableRow(
-                            'Starts At :',
-                            _formattedTime(
-                              _silentStartHour,
-                              _silentStartMinute,
+                  // Float Settings
+                  _buildSectionHeader('Float Settings'),
+                  _buildSectionCard([
+                    _buildToggleRow('Enable Floats', _floatsEnabled, (val) {
+                      setState(() => _floatsEnabled = val);
+                      _saveBool('floats_enabled', val);
+                    }),
+                    Opacity(
+                      opacity: _floatsEnabled ? 1.0 : 0.5,
+                      child: IgnorePointer(
+                        ignoring: !_floatsEnabled,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Divider(color: Color(0xFFE5E7EB), height: 1),
+                            _buildToggleRow(
+                              'Send Floats During Silent Hours',
+                              _sendFloatsSilent,
+                              (val) {
+                                setState(() => _sendFloatsSilent = val);
+                                _saveBool('send_floats_silent', val);
+                              },
                             ),
-                            _pickSilentHoursStart,
-                          ),
-                          const Divider(color: Color(0xFFE5E7EB), height: 1),
-                          _buildTappableRow(
-                            'Ends At :',
-                            _formattedTime(_silentEndHour, _silentEndMinute),
-                            _pickSilentHoursEnd,
-                          ),
-                        ],
+                            const Divider(color: Color(0xFFE5E7EB), height: 1),
+                            _buildTappableRow(
+                              'Frequency',
+                              'Every $_floatsFrequencyHours ${_floatsFrequencyHours == 1 ? 'Hour' : 'Hours'}',
+                              _showFrequencySheet,
+                            ),
+                            const Divider(color: Color(0xFFE5E7EB), height: 1),
+                            _buildTappableRow(
+                              'Starts At :',
+                              _formattedTime(
+                                _silentStartHour,
+                                _silentStartMinute,
+                              ),
+                              _pickSilentHoursStart,
+                            ),
+                            const Divider(color: Color(0xFFE5E7EB), height: 1),
+                            _buildTappableRow(
+                              'Ends At :',
+                              _formattedTime(_silentEndHour, _silentEndMinute),
+                              _pickSilentHoursEnd,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ]),
-                const SizedBox(height: 20),
+                  ]),
+                  const SizedBox(height: 20),
 
-                // Account Settings
-                _buildSectionHeader('Account Settings'),
-                _buildSectionCard([
-                  _buildStaticRow('Name :', _name),
-                  const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildStaticRow('Email :', _email),
-                  const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildActionRow(
-                    'Logout',
-                    const Color(0xFFEA4335),
-                    _confirmLogout,
-                  ),
-                  const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildActionRow(
-                    'Delete Account',
-                    const Color(0xFFEA4335),
-                    _navigateToDeleteAccountScreen,
-                  ),
-                ]),
-                const SizedBox(height: 20),
+                  // Account Settings
+                  _buildSectionHeader('Account Settings'),
+                  _buildSectionCard([
+                    _buildStaticRow('Name :', _name),
+                    const Divider(color: Color(0xFFE5E7EB), height: 1),
+                    _buildStaticRow('Email :', _email),
+                    const Divider(color: Color(0xFFE5E7EB), height: 1),
+                    _buildActionRow(
+                      'Logout',
+                      const Color(0xFFEA4335),
+                      _confirmLogout,
+                    ),
+                    const Divider(color: Color(0xFFE5E7EB), height: 1),
+                    _buildActionRow(
+                      'Delete Account',
+                      const Color(0xFFEA4335),
+                      _navigateToDeleteAccountScreen,
+                    ),
+                  ]),
+                  const SizedBox(height: 20),
 
-                // Support & Feedback
-                _buildSectionHeader('Support & Feedback'),
-                _buildSectionCard([
-                  _buildTappableActionRow('Feedback', _showFeedbackBottomSheet),
-                  const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildTappableActionRow('Help', _showHelpDialog),
-                ]),
-                const SizedBox(height: 24),
-              ],
+                  // Support & Feedback
+                  _buildSectionHeader('Support & Feedback'),
+                  _buildSectionCard([
+                    _buildTappableActionRow('Feedback', _showFeedbackBottomSheet),
+                    const Divider(color: Color(0xFFE5E7EB), height: 1),
+                    _buildTappableActionRow('Help', _showHelpDialog),
+                  ]),
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
         ),

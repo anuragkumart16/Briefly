@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import '../config.dart';
 import 'notification_helper.dart';
+import 'floats_sync_service.dart';
 
 String _localDateKey(DateTime date) {
   final month = date.month.toString().padLeft(2, '0');
@@ -179,6 +180,17 @@ void testSchedulerAlarmCallback() async {
     markDailyNotification: false,
   );
 }
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// Sync Floats alarm — runs in background isolate every 15 minutes
+// ─────────────────────────────────────────────────────────────────────────────
+@pragma('vm:entry-point')
+void syncFloatsAlarmCallback() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await FloatsSyncService.syncWithServer();
+  } catch (_) {}
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Scheduler API
@@ -187,6 +199,7 @@ class BackgroundScheduler {
   static const int _dailyReportAlarmId = 100;
   static const int _periodicFloatsAlarmId = 200;
   static const int _testSchedulerAlarmId = 300;
+  static const int _syncFloatsAlarmId = 400;
   static const int _defaultReportHour = 20;
   static const int _defaultReportMinute = 0;
   static const int _defaultFloatsFrequencyHours = 2;
@@ -208,6 +221,7 @@ class BackgroundScheduler {
 
     await scheduleDailyReport(reportHour, reportMinute);
     await scheduleFloats(floatsFrequencyHours, floatsEnabled);
+    await scheduleFloatsSync();
   }
 
   static Future<void> scheduleDailyReport(int hour, int minute) async {
@@ -264,9 +278,22 @@ class BackgroundScheduler {
     );
   }
 
+  static Future<void> scheduleFloatsSync() async {
+    await AndroidAlarmManager.cancel(_syncFloatsAlarmId);
+    await AndroidAlarmManager.periodic(
+      const Duration(minutes: 15),
+      _syncFloatsAlarmId,
+      syncFloatsAlarmCallback,
+      exact: false,
+      wakeup: false,
+      rescheduleOnReboot: true,
+    );
+  }
+
   static Future<void> cancelAll() async {
     await AndroidAlarmManager.cancel(_dailyReportAlarmId);
     await AndroidAlarmManager.cancel(_periodicFloatsAlarmId);
     await AndroidAlarmManager.cancel(_testSchedulerAlarmId);
+    await AndroidAlarmManager.cancel(_syncFloatsAlarmId);
   }
 }

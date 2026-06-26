@@ -25,6 +25,9 @@ import feedbackRouter from "./routes/feedback.routes"
 import userRouter from "./routes/user.routes"
 import floatRouter from "./routes/float.routes"
 import reportRouter from "./routes/report.routes"
+import taskRouter from "./routes/task.routes"
+import calendarRouter from "./routes/calendar.routes"
+import emailRouter from "./routes/email.routes"
 
 // url mapping
 app.use("/healthcheck", healthCheckRouter)
@@ -33,6 +36,9 @@ app.use("/api/v1/users", settingsRouter)
 app.use("/api/v1/users", userRouter)
 app.use("/api/v1/users", floatRouter)
 app.use("/api/v1/users", reportRouter)
+app.use("/api/v1/users", taskRouter)
+app.use("/api/v1/users", calendarRouter)
+app.use("/api/v1/users", emailRouter)
 app.use("/api/v1/feedback", feedbackRouter)
 
 

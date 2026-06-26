@@ -92,6 +92,7 @@ class _MainShellState extends State<MainShell> {
       await BackgroundScheduler.scheduleDailyReport(hour, minute);
     }
     await BackgroundScheduler.scheduleFloats(floatsFrequencyHours, floatsEnabled);
+    await BackgroundScheduler.scheduleFloatsSync();
   }
 
 
@@ -689,8 +690,8 @@ class _MainShellState extends State<MainShell> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
                   _buildDrawerNavItem(
-                    icon: Icons.article_outlined,
-                    title: 'Daily Report',
+                    icon: Icons.home_outlined,
+                    title: 'Home',
                     isSelected: _selectedIndex == 0,
                     onTap: () {
                       _scaffoldKey.currentState?.closeDrawer();

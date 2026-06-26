@@ -3,36 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config.dart';
-
-class FloatModel {
-  final String id;
-  String text;
-  bool isActive;
-  final DateTime createdAt;
-  DateTime updatedAt;
-
-  FloatModel({
-    required this.id,
-    required this.text,
-    required this.isActive,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory FloatModel.fromJson(Map<String, dynamic> json) {
-    return FloatModel(
-      id: json['id'] as String? ?? '',
-      text: json['text'] as String? ?? '',
-      isActive: json['isActive'] as bool? ?? true,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : DateTime.now(),
-    );
-  }
-}
+import 'services/floats_sync_service.dart';
 
 /// Pure body widget for the Floats tab.
 /// No Scaffold, no AppBar, no BottomNav — all owned by MainShell.
@@ -80,33 +51,38 @@ class FloatsBodyState extends State<FloatsBody> {
     }
   }
 
-  Future<void> _fetchFloats() async {
+  Future<void> _fetchFloats({bool isPullToRefresh = false}) async {
     if (_userId.isEmpty) return;
     setState(() {
-      _isLoading = true;
+      _isLoading = !isPullToRefresh;
     });
+
+    final localFloats = await FloatsSyncService.loadLocalFloats();
+    setState(() {
+      _floats.clear();
+      _floats.addAll(localFloats.where((f) => f.syncStatus != 'deleted_offline'));
+      if (!isPullToRefresh && _floats.isEmpty) {
+        _isLoading = true;
+      }
+    });
+
     try {
-      final response = await http.get(
-        Uri.parse('${AppConfig.backendUrl}/api/v1/users/$_userId/floats'),
-      );
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> body = jsonDecode(response.body);
-        if (body['success'] == true && body['data'] != null) {
-          final List<dynamic> data = body['data'];
-          setState(() {
-            _floats.clear();
-            _floats.addAll(data.map((json) => FloatModel.fromJson(json)).toList());
-          });
-        }
-      } else {
-        debugPrint('Failed to load floats: ${response.body}');
+      await FloatsSyncService.syncWithServer();
+      final syncedFloats = await FloatsSyncService.loadLocalFloats();
+      if (mounted) {
+        setState(() {
+          _floats.clear();
+          _floats.addAll(syncedFloats.where((f) => f.syncStatus != 'deleted_offline'));
+        });
       }
     } catch (e) {
-      debugPrint('Error fetching floats: $e');
+      debugPrint('Error syncing floats: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -213,31 +189,16 @@ class FloatsBodyState extends State<FloatsBody> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    final text = controller.text.trim();
-                    if (text.isNotEmpty) {
-                      Navigator.pop(ctx);
-                      try {
-                        final response = await http.post(
-                          Uri.parse('${AppConfig.backendUrl}/api/v1/users/$_userId/floats'),
-                          headers: {'Content-Type': 'application/json'},
-                          body: jsonEncode({'text': text}),
-                        );
-                        if (response.statusCode == 201) {
-                          final Map<String, dynamic> body = jsonDecode(response.body);
-                          if (body['success'] == true && body['data'] != null) {
-                            setState(() {
-                              _floats.insert(0, FloatModel.fromJson(body['data']));
-                            });
-                          }
-                        } else {
-                          debugPrint('Failed to save float: ${response.body}');
-                        }
-                      } catch (e) {
-                        debugPrint('Error saving float: $e');
+                      final text = controller.text.trim();
+                      if (text.isNotEmpty) {
+                        Navigator.pop(ctx);
+                        final float = await FloatsSyncService.addFloatLocally(text);
+                        setState(() {
+                          _floats.insert(0, float);
+                        });
+                      } else {
+                        Navigator.pop(ctx);
                       }
-                    } else {
-                      Navigator.pop(ctx);
-                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF5B24),
@@ -280,20 +241,10 @@ class FloatsBodyState extends State<FloatsBody> {
               onPressed: () async {
                 Navigator.pop(context); // close dialog
                 Navigator.pop(sheetCtx); // close bottom sheet
-                try {
-                  final response = await http.delete(
-                    Uri.parse('${AppConfig.backendUrl}/api/v1/users/$_userId/floats/${float.id}'),
-                  );
-                  if (response.statusCode == 200) {
-                    setState(() {
-                      _floats.removeWhere((f) => f.id == float.id);
-                    });
-                  } else {
-                    debugPrint('Failed to delete float: ${response.body}');
-                  }
-                } catch (e) {
-                  debugPrint('Error deleting float: $e');
-                }
+                await FloatsSyncService.deleteFloatLocally(float.id);
+                setState(() {
+                  _floats.removeWhere((f) => f.id == float.id);
+                });
               },
               child: const Text('Delete', style: TextStyle(color: Color(0xFFEA4335), fontFamily: 'Open Sans')),
             ),
@@ -319,24 +270,14 @@ class FloatsBodyState extends State<FloatsBody> {
             TextButton(
               onPressed: () async {
                 Navigator.pop(context); // close dialog
-                try {
-                  final response = await http.post(
-                    Uri.parse('${AppConfig.backendUrl}/api/v1/users/$_userId/floats/batch-delete'),
-                    headers: {'Content-Type': 'application/json'},
-                    body: jsonEncode({'ids': _selectedIds.toList()}),
-                  );
-                  if (response.statusCode == 200) {
-                    setState(() {
-                      _floats.removeWhere((f) => _selectedIds.contains(f.id));
-                      _selectedIds.clear();
-                      _isSelectionMode = false;
-                    });
-                  } else {
-                    debugPrint('Failed to batch delete floats: ${response.body}');
-                  }
-                } catch (e) {
-                  debugPrint('Error batch deleting floats: $e');
+                for (final id in _selectedIds) {
+                  await FloatsSyncService.deleteFloatLocally(id);
                 }
+                setState(() {
+                  _floats.removeWhere((f) => _selectedIds.contains(f.id));
+                  _selectedIds.clear();
+                  _isSelectionMode = false;
+                });
               },
               child: const Text('Delete', style: TextStyle(color: Color(0xFFEA4335), fontFamily: 'Open Sans')),
             ),
@@ -347,32 +288,19 @@ class FloatsBodyState extends State<FloatsBody> {
   }
 
   void _markSelectedInactive() async {
-    try {
-      final response = await http.post(
-        Uri.parse('${AppConfig.backendUrl}/api/v1/users/$_userId/floats/batch-update'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'ids': _selectedIds.toList(),
-          'isActive': false,
-        }),
-      );
-      if (response.statusCode == 200) {
-        setState(() {
-          for (var f in _floats) {
-            if (_selectedIds.contains(f.id)) {
-              f.isActive = false;
-              f.updatedAt = DateTime.now();
-            }
-          }
-          _selectedIds.clear();
-          _isSelectionMode = false;
-        });
-      } else {
-        debugPrint('Failed to batch update floats: ${response.body}');
-      }
-    } catch (e) {
-      debugPrint('Error batch updating floats: $e');
+    for (final id in _selectedIds) {
+      await FloatsSyncService.updateFloatLocally(id, isActive: false);
     }
+    setState(() {
+      for (var f in _floats) {
+        if (_selectedIds.contains(f.id)) {
+          f.isActive = false;
+          f.updatedAt = DateTime.now();
+        }
+      }
+      _selectedIds.clear();
+      _isSelectionMode = false;
+    });
   }
 
   void _showFloatDetailsSheet(FloatModel float) {
@@ -502,31 +430,18 @@ class FloatsBodyState extends State<FloatsBody> {
                       final updatedText = editController.text.trim();
                       if (updatedText.isNotEmpty) {
                         Navigator.pop(ctx);
-                        try {
-                          final response = await http.put(
-                            Uri.parse('${AppConfig.backendUrl}/api/v1/users/$_userId/floats/${float.id}'),
-                            headers: {'Content-Type': 'application/json'},
-                            body: jsonEncode({
-                              'text': updatedText,
-                              'isActive': localIsActive,
-                            }),
-                          );
-                          if (response.statusCode == 200) {
-                            final Map<String, dynamic> body = jsonDecode(response.body);
-                            if (body['success'] == true && body['data'] != null) {
-                              setState(() {
-                                final index = _floats.indexWhere((f) => f.id == float.id);
-                                if (index != -1) {
-                                  _floats[index] = FloatModel.fromJson(body['data']);
-                                }
-                              });
+                        await FloatsSyncService.updateFloatLocally(float.id, text: updatedText, isActive: localIsActive);
+                        setState(() {
+                          final index = _floats.indexWhere((f) => f.id == float.id);
+                          if (index != -1) {
+                            _floats[index].text = updatedText;
+                            _floats[index].isActive = localIsActive;
+                            _floats[index].updatedAt = DateTime.now();
+                            if (_floats[index].syncStatus != 'created_offline') {
+                              _floats[index].syncStatus = 'updated_offline';
                             }
-                          } else {
-                            debugPrint('Failed to update float: ${response.body}');
                           }
-                        } catch (e) {
-                          debugPrint('Error updating float: $e');
-                        }
+                        });
                       } else {
                         Navigator.pop(ctx);
                       }
@@ -771,43 +686,48 @@ class FloatsBodyState extends State<FloatsBody> {
                     valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF5B24)),
                   ),
                 )
-              : list.isEmpty
-                  ? _buildEmptyState()
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                      itemCount: list.length,
-                      itemBuilder: (context, index) {
-                        final float = list[index];
-                        final isSelected = _selectedIds.contains(float.id);
-                        return _FloatTile(
-                          float: float,
-                          isSelectionMode: _isSelectionMode,
-                          isSelected: isSelected,
-                          onSelectChanged: (val) {
-                            setState(() {
-                              if (val == true) {
-                                _selectedIds.add(float.id);
-                              } else {
-                                _selectedIds.remove(float.id);
-                              }
-                            });
-                          },
-                          onTap: () {
-                            if (_isSelectionMode) {
-                              setState(() {
-                                if (isSelected) {
-                                  _selectedIds.remove(float.id);
+              : RefreshIndicator(
+                  onRefresh: () => _fetchFloats(isPullToRefresh: true),
+                  color: const Color(0xFFFF5B24),
+                  child: list.isEmpty
+                      ? _buildEmptyState()
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                          itemCount: list.length,
+                          itemBuilder: (context, index) {
+                            final float = list[index];
+                            final isSelected = _selectedIds.contains(float.id);
+                            return _FloatTile(
+                              float: float,
+                              isSelectionMode: _isSelectionMode,
+                              isSelected: isSelected,
+                              onSelectChanged: (val) {
+                                setState(() {
+                                  if (val == true) {
+                                    _selectedIds.add(float.id);
+                                  } else {
+                                    _selectedIds.remove(float.id);
+                                  }
+                                });
+                              },
+                              onTap: () {
+                                if (_isSelectionMode) {
+                                  setState(() {
+                                    if (isSelected) {
+                                      _selectedIds.remove(float.id);
+                                    } else {
+                                      _selectedIds.add(float.id);
+                                    }
+                                  });
                                 } else {
-                                  _selectedIds.add(float.id);
+                                  _showFloatDetailsSheet(float);
                                 }
-                              });
-                            } else {
-                              _showFloatDetailsSheet(float);
-                            }
+                              },
+                            );
                           },
-                        );
-                      },
-                    ),
+                        ),
+                ),
         ),
       ],
     );
@@ -868,8 +788,13 @@ class _FloatTile extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (!isSelectionMode)
+                  if (!isSelectionMode) ...[
+                    if (float.syncStatus != 'synced') ...[
+                      const Icon(Icons.sync_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                    ],
                     const Icon(Icons.chevron_right_rounded, color: Color(0xFFFF5B24), size: 22),
+                  ],
                 ],
               ),
             ),

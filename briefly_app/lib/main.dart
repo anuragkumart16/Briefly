@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart';
+import 'report_screen.dart';
 import 'services/background_scheduler.dart';
 import 'splash_screen.dart';
 
@@ -22,9 +23,14 @@ void main() async {
     if (payload == 'daily_report') {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('open_report_from_notification', true);
+      
       navigatorKey.currentState?.pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
         (route) => false,
+      );
+
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => const ReportScreen()),
       );
     }
   };
