@@ -40,6 +40,9 @@ dependencies:
   flutter_local_notifications: ^17.2.1
   android_alarm_manager_plus: ^4.0.1
   url_launcher: ^6.3.2
+  package_info_plus: ^10.1.0
+  path_provider: ^2.1.6
+  open_app_file: ^4.0.5
 
 dev_dependencies:
   flutter_test:

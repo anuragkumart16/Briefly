@@ -13,6 +13,7 @@ import 'widgets/app_bottom_nav_bar.dart';
 import 'widgets/app_top_bar.dart';
 import 'widgets/account_bottom_sheet.dart';
 import 'services/background_scheduler.dart';
+import 'services/update_service.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -63,6 +64,7 @@ class _MainShellState extends State<MainShell> {
       if (!saved && mounted) {
         _scaffoldKey.currentState?.openDrawer();
       }
+      _checkAppUpdate();
     });
   }
 
@@ -95,7 +97,150 @@ class _MainShellState extends State<MainShell> {
     await BackgroundScheduler.scheduleFloatsSync();
   }
 
+  Future<void> _checkAppUpdate() async {
+    final updateInfo = await UpdateService.checkForUpdate();
+    if (updateInfo != null && mounted) {
+      _showUpdateDialog(updateInfo);
+    }
+  }
 
+  void _showUpdateDialog(UpdateInfo info) {
+    showDialog(
+      context: context,
+      barrierDismissible: !info.mandatory,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async => !info.mandatory,
+          child: AlertDialog(
+            title: const Text('Update Available'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'A new version (${info.version}) of Briefly is available.',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 12),
+                if (info.releaseNotes.isNotEmpty) ...[
+                  const Text(
+                    'Release Notes:',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(info.releaseNotes),
+                  const SizedBox(height: 16),
+                ],
+                const Text('Would you like to update now?'),
+              ],
+            ),
+            actions: [
+              if (!info.mandatory)
+                TextButton(
+                  child: const Text('Later', style: TextStyle(color: Colors.grey)),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF5B24),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('Update Now'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _startUpdateDownload(info.url);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _startUpdateDownload(String url) {
+    double progress = 0.0;
+    StateSetter? dialogStateSetter;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async => false, // Cannot dismiss download
+          child: AlertDialog(
+            title: const Text('Downloading Update'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            content: StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                dialogStateSetter = setState;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    LinearProgressIndicator(
+                      value: progress,
+                      color: const Color(0xFFFF5B24),
+                      backgroundColor: Colors.grey[200],
+                    ),
+                    const SizedBox(height: 16),
+                    Text('${(progress * 100).toStringAsFixed(0)}% Completed'),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    UpdateService.downloadApk(url, (p) {
+      if (dialogStateSetter != null) {
+        dialogStateSetter!(() {
+          progress = p;
+        });
+      }
+    }).then((file) {
+      if (mounted) {
+        Navigator.of(context).pop(); // Close progress dialog
+      }
+      if (file != null) {
+        UpdateService.installApk(file.path);
+      } else {
+        _showDownloadErrorDialog();
+      }
+    });
+  }
+
+  void _showDownloadErrorDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Download Failed'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          content: const Text(
+            'Failed to download the update. Please check your internet connection and try again.',
+          ),
+          actions: [
+            TextButton(
+              child: const Text('OK', style: TextStyle(color: Color(0xFFFF5B24))),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Future<void> _onTabTapped(int index) async {
     if (index == 1) {

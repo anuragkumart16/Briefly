@@ -28,6 +28,7 @@ import reportRouter from "./routes/report.routes"
 import taskRouter from "./routes/task.routes"
 import calendarRouter from "./routes/calendar.routes"
 import emailRouter from "./routes/email.routes"
+import updateRouter from "./routes/update.routes"
 
 // url mapping
 app.use("/healthcheck", healthCheckRouter)
@@ -39,6 +40,7 @@ app.use("/api/v1/users", reportRouter)
 app.use("/api/v1/users", taskRouter)
 app.use("/api/v1/users", calendarRouter)
 app.use("/api/v1/users", emailRouter)
+app.use("/api/v1/update", updateRouter)
 app.use("/api/v1/feedback", feedbackRouter)
 
 
