@@ -40,6 +40,7 @@ const getDailyReport = async (req: Request, res: Response) => {
         const includeCalendar = settings?.reportIncludeCalendar ?? true;
         const includeTasks    = settings?.reportIncludeTasks    ?? true;
         const includeEmails   = settings?.reportIncludeEmails   ?? true;
+        const markEmailsUnread = settings?.markEmailsUnread     ?? true;
 
         // 2. Resolve a valid, non-expired Google Access Token
         let accessToken = user.accessToken;
@@ -309,6 +310,25 @@ Rules:
 
         const parsedReport = JSON.parse(aiContent);
         console.log(`Daily report generated successfully for ${user.email}.`);
+
+        // 8. If enabled, mark the fetched emails back as UNREAD (fire-and-forget)
+        if (markEmailsUnread && emails.length > 0 && accessToken) {
+            const emailIds = emails.map((e: any) => e.id).filter(Boolean);
+            if (emailIds.length > 0) {
+                Promise.all(
+                    emailIds.map((msgId: string) =>
+                        fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgId}/modify`, {
+                            method: "POST",
+                            headers: {
+                                Authorization: `Bearer ${accessToken}`,
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ addLabelIds: ["UNREAD"] }),
+                        }).catch((err) => console.error(`Failed to mark email ${msgId} as unread:`, err))
+                    )
+                ).catch(() => {});
+            }
+        }
 
         return ApiResponse(res, 200, "Daily report retrieved successfully", parsedReport);
 

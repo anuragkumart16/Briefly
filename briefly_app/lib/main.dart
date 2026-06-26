@@ -2,14 +2,33 @@ import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'services/notification_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'home_screen.dart';
+import 'services/background_scheduler.dart';
 import 'splash_screen.dart';
+
+/// Global navigator key so notification tap can navigate from outside widget tree
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AndroidAlarmManager.initialize();
   await NotificationHelper.init();
   await NotificationHelper.requestPermissions();
+  await BackgroundScheduler.restoreSavedSchedules();
   runApp(const MyApp());
+
+  NotificationHelper.onNotificationTap = (String? payload) async {
+    if (payload == 'daily_report') {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('open_report_from_notification', true);
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+    }
+  };
+  await NotificationHelper.handleColdStart();
 }
 
 class MyApp extends StatelessWidget {
@@ -19,7 +38,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      navigatorKey: navigatorKey,
+      title: 'Briefly',
       theme: ThemeData(
         // This is the theme of your application.
         //

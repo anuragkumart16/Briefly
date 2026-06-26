@@ -16,10 +16,12 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
     return const MainShell();
   }
 }
@@ -37,6 +39,52 @@ class _HomeBodyState extends State<HomeBody> {
   String? _errorMessage;
   Map<String, dynamic>? _reportData;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialReportState();
+  }
+
+  bool _isSameLocalDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  Future<void> _loadInitialReportState() async {
+    final loadedCachedReport = await _loadCachedReport();
+    final prefs = await SharedPreferences.getInstance();
+    final shouldAutoFetch =
+        prefs.getBool('open_report_from_notification') ?? false;
+
+    if (shouldAutoFetch) {
+      await prefs.remove('open_report_from_notification');
+      if (!loadedCachedReport && mounted) {
+        await _fetchDailyReport();
+      }
+    }
+  }
+
+  Future<bool> _loadCachedReport() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedReport = prefs.getString('cached_report');
+    final cachedReportDate = prefs.getString('cached_report_date');
+
+    if (cachedReport == null || cachedReportDate == null) return false;
+
+    final parsedDate = DateTime.tryParse(cachedReportDate);
+    if (parsedDate == null || !_isSameLocalDay(parsedDate, DateTime.now())) {
+      return false;
+    }
+
+    try {
+      final data = jsonDecode(cachedReport);
+      if (data is Map<String, dynamic> && mounted) {
+        setState(() => _reportData = data);
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   Future<void> _fetchDailyReport() async {
     setState(() {
       _isLoading = true;
@@ -49,7 +97,8 @@ class _HomeBodyState extends State<HomeBody> {
       final userId = prefs.getString('user_id') ?? '';
       if (userId.isEmpty) {
         setState(() {
-          _errorMessage = 'User session not found. Please log out and sign in again.';
+          _errorMessage =
+              'User session not found. Please log out and sign in again.';
           _isLoading = false;
         });
         return;
@@ -61,11 +110,9 @@ class _HomeBodyState extends State<HomeBody> {
       final timeMin = todayStart.toUtc().toIso8601String();
       final timeMax = todayEnd.toUtc().toIso8601String();
 
-      final url = Uri.parse('${AppConfig.backendUrl}/api/v1/users/$userId/report')
-          .replace(queryParameters: {
-            'timeMin': timeMin,
-            'timeMax': timeMax,
-          });
+      final url = Uri.parse(
+        '${AppConfig.backendUrl}/api/v1/users/$userId/report',
+      ).replace(queryParameters: {'timeMin': timeMin, 'timeMax': timeMax});
 
       final response = await http.get(url);
 
@@ -84,7 +131,8 @@ class _HomeBodyState extends State<HomeBody> {
         }
       } else {
         setState(() {
-          _errorMessage = 'Server returned an error status: ${response.statusCode}';
+          _errorMessage =
+              'Server returned an error status: ${response.statusCode}';
           _isLoading = false;
         });
       }
@@ -103,7 +151,10 @@ class _HomeBodyState extends State<HomeBody> {
       // Try a non-browser app first (opens Gmail if installed), fall back to Chrome Custom Tab
       bool launched = false;
       try {
-        launched = await launchUrl(uri, mode: LaunchMode.externalNonBrowserApplication);
+        launched = await launchUrl(
+          uri,
+          mode: LaunchMode.externalNonBrowserApplication,
+        );
       } catch (_) {}
       if (!launched) {
         await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
@@ -115,7 +166,9 @@ class _HomeBodyState extends State<HomeBody> {
             content: Text('Error opening link: $e'),
             backgroundColor: const Color(0xFFFF5B24),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -152,7 +205,8 @@ class _HomeBodyState extends State<HomeBody> {
     final link = email['link'];
     final isHighPriority = email['priority'] == 'high';
 
-    final displayName = RegExp(r'^(.+?)\s*<').firstMatch(from)?.group(1)?.trim() ?? from;
+    final displayName =
+        RegExp(r'^(.+?)\s*<').firstMatch(from)?.group(1)?.trim() ?? from;
     final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
 
     return GestureDetector(
@@ -209,9 +263,14 @@ class _HomeBodyState extends State<HomeBody> {
                       if (isHighPriority) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFF5B24).withValues(alpha: 0.12),
+                            color: const Color(
+                              0xFFFF5B24,
+                            ).withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: const Text(
@@ -226,7 +285,11 @@ class _HomeBodyState extends State<HomeBody> {
                         ),
                       ],
                       const SizedBox(width: 6),
-                      const Icon(Icons.open_in_new_rounded, size: 13, color: Color(0xFFBBBBBB)),
+                      const Icon(
+                        Icons.open_in_new_rounded,
+                        size: 13,
+                        color: Color(0xFFBBBBBB),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 3),
@@ -333,7 +396,11 @@ class _HomeBodyState extends State<HomeBody> {
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF888888)),
+                const Icon(
+                  Icons.location_on_outlined,
+                  size: 13,
+                  color: Color(0xFF888888),
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -354,7 +421,11 @@ class _HomeBodyState extends State<HomeBody> {
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.people_outline_rounded, size: 13, color: Color(0xFF888888)),
+                const Icon(
+                  Icons.people_outline_rounded,
+                  size: 13,
+                  color: Color(0xFF888888),
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -396,8 +467,12 @@ class _HomeBodyState extends State<HomeBody> {
               Padding(
                 padding: const EdgeInsets.only(top: 1),
                 child: Icon(
-                  isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                  color: isCompleted ? const Color(0xFF888888) : const Color(0xFFFF5B24),
+                  isCompleted
+                      ? Icons.check_circle_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  color: isCompleted
+                      ? const Color(0xFF888888)
+                      : const Color(0xFFFF5B24),
                   size: 19,
                 ),
               ),
@@ -412,8 +487,12 @@ class _HomeBodyState extends State<HomeBody> {
                         fontFamily: 'Open Sans',
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: isCompleted ? const Color(0xFFAAAAAA) : const Color(0xFF222222),
-                        decoration: isCompleted ? TextDecoration.lineThrough : null,
+                        color: isCompleted
+                            ? const Color(0xFFAAAAAA)
+                            : const Color(0xFF222222),
+                        decoration: isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                     if (summary.isNotEmpty) ...[
@@ -431,13 +510,16 @@ class _HomeBodyState extends State<HomeBody> {
                     if (deadline.isNotEmpty && !isCompleted) ...[
                       const SizedBox(height: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: isOverdue
                               ? const Color(0xFFFFEEEE)
                               : isDueToday
-                                  ? const Color(0xFFFFF3E0)
-                                  : const Color(0xFFEEF2FF),
+                              ? const Color(0xFFFFF3E0)
+                              : const Color(0xFFEEF2FF),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -449,8 +531,8 @@ class _HomeBodyState extends State<HomeBody> {
                             color: isOverdue
                                 ? const Color(0xFFCC0000)
                                 : isDueToday
-                                    ? const Color(0xFFE65100)
-                                    : const Color(0xFF3949AB),
+                                ? const Color(0xFFE65100)
+                                : const Color(0xFF3949AB),
                           ),
                         ),
                       ),
@@ -537,7 +619,10 @@ class _HomeBodyState extends State<HomeBody> {
                 ],
               ),
               IconButton(
-                icon: const Icon(Icons.refresh_rounded, color: Color(0xFFFF5B24)),
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                  color: Color(0xFFFF5B24),
+                ),
                 onPressed: _fetchDailyReport,
                 tooltip: 'Refresh',
               ),
@@ -562,7 +647,11 @@ class _HomeBodyState extends State<HomeBody> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.auto_awesome_rounded, color: Color(0xFFFF5B24), size: 14),
+                      const Icon(
+                        Icons.auto_awesome_rounded,
+                        color: Color(0xFFFF5B24),
+                        size: 14,
+                      ),
                       const SizedBox(width: 6),
                       const Text(
                         'AI SUMMARY',
@@ -640,16 +729,24 @@ class _HomeBodyState extends State<HomeBody> {
           if (hasCalendar) ...[
             _buildSectionHeader('Schedule', Icons.calendar_today_rounded),
             if (calendar.isEmpty)
-              _buildEmptyState('No events scheduled for today', Icons.event_busy_rounded)
+              _buildEmptyState(
+                'No events scheduled for today',
+                Icons.event_busy_rounded,
+              )
             else
-              ...calendar.map((e) => _buildEventCard(e as Map<String, dynamic>)),
+              ...calendar.map(
+                (e) => _buildEventCard(e as Map<String, dynamic>),
+              ),
           ],
 
           // ── Tasks section
           if (hasTasks) ...[
             _buildSectionHeader('Tasks', Icons.task_alt_rounded),
             if (tasks.isEmpty)
-              _buildEmptyState('No tasks pending', Icons.check_circle_outline_rounded)
+              _buildEmptyState(
+                'No tasks pending',
+                Icons.check_circle_outline_rounded,
+              )
             else
               Container(
                 padding: const EdgeInsets.fromLTRB(14, 14, 14, 2),
@@ -658,7 +755,9 @@ class _HomeBodyState extends State<HomeBody> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
-                  children: tasks.map((t) => _buildTaskTile(t as Map<String, dynamic>)).toList(),
+                  children: tasks
+                      .map((t) => _buildTaskTile(t as Map<String, dynamic>))
+                      .toList(),
                 ),
               ),
           ],
@@ -667,7 +766,10 @@ class _HomeBodyState extends State<HomeBody> {
           if (hasEmails) ...[
             _buildSectionHeader('Unread Emails', Icons.mail_outline_rounded),
             if (emails.isEmpty)
-              _buildEmptyState('No important emails today', Icons.drafts_rounded)
+              _buildEmptyState(
+                'No important emails today',
+                Icons.drafts_rounded,
+              )
             else
               ...emails.map((e) => _buildEmailCard(e as Map<String, dynamic>)),
           ],
@@ -677,7 +779,9 @@ class _HomeBodyState extends State<HomeBody> {
             onPressed: () => setState(() => _reportData = null),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Color(0xFFDDDDDD)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             child: const Text(
@@ -696,8 +800,29 @@ class _HomeBodyState extends State<HomeBody> {
 
   String _formattedDate() {
     final now = DateTime.now();
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
     return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
   }
 
@@ -744,7 +869,11 @@ class _HomeBodyState extends State<HomeBody> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline_rounded, size: 52, color: Colors.redAccent),
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 52,
+                color: Colors.redAccent,
+              ),
               const SizedBox(height: 16),
               Text(
                 _errorMessage!,
@@ -764,8 +893,13 @@ class _HomeBodyState extends State<HomeBody> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF5B24),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ],
@@ -784,7 +918,11 @@ class _HomeBodyState extends State<HomeBody> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.article_outlined, size: 76, color: Color(0xFFFFB39A)),
+            const Icon(
+              Icons.article_outlined,
+              size: 76,
+              color: Color(0xFFFFB39A),
+            ),
             const SizedBox(height: 20),
             const Text(
               'Your daily report is ready.',
@@ -823,7 +961,10 @@ class _HomeBodyState extends State<HomeBody> {
                 foregroundColor: Colors.white,
                 elevation: 2,
                 shadowColor: const Color(0xFFFF5B24).withValues(alpha: 0.3),
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 28,
+                  vertical: 16,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -836,13 +977,17 @@ class _HomeBodyState extends State<HomeBody> {
                   await NotificationHelper.showNotification(
                     id: 999,
                     title: 'Test Float Notification 🚀',
-                    body: 'This is an instant test notification verifying that Briefly Alerts are working correctly!',
+                    body:
+                        'This is an instant test notification verifying that Briefly Alerts are working correctly!',
                   );
                 } catch (e) {
                   debugPrint('Failed to send instant notification: $e');
                 }
               },
-              icon: const Icon(Icons.notifications_active_rounded, color: Color(0xFFFF5B24)),
+              icon: const Icon(
+                Icons.notifications_active_rounded,
+                color: Color(0xFFFF5B24),
+              ),
               label: const Text(
                 'Test Notification',
                 style: TextStyle(
@@ -853,7 +998,10 @@ class _HomeBodyState extends State<HomeBody> {
               ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFFFF5B24)),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -865,4 +1013,3 @@ class _HomeBodyState extends State<HomeBody> {
     );
   }
 }
-

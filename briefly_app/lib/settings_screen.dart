@@ -90,16 +90,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             setState(() {
               _markEmailsUnread = data['markEmailsUnread'] ?? _markEmailsUnread;
               _sendFloatsSilent = data['sendFloatsSilent'] ?? _sendFloatsSilent;
-              _floatsFrequencyHours = data['floatsFrequencyHours'] ?? _floatsFrequencyHours;
+              _floatsFrequencyHours =
+                  data['floatsFrequencyHours'] ?? _floatsFrequencyHours;
               _floatsEnabled = data['floatsEnabled'] ?? _floatsEnabled;
-              _reportIncludeTasks = data['reportIncludeTasks'] ?? _reportIncludeTasks;
-              _reportIncludeCalendar = data['reportIncludeCalendar'] ?? _reportIncludeCalendar;
-              _reportIncludeEmails = data['reportIncludeEmails'] ?? _reportIncludeEmails;
-              _reportIncludeFloats = data['reportIncludeFloats'] ?? _reportIncludeFloats;
+              _reportIncludeTasks =
+                  data['reportIncludeTasks'] ?? _reportIncludeTasks;
+              _reportIncludeCalendar =
+                  data['reportIncludeCalendar'] ?? _reportIncludeCalendar;
+              _reportIncludeEmails =
+                  data['reportIncludeEmails'] ?? _reportIncludeEmails;
+              _reportIncludeFloats =
+                  data['reportIncludeFloats'] ?? _reportIncludeFloats;
               _reportHour = data['reportHour'] ?? _reportHour;
               _reportMinute = data['reportMinute'] ?? _reportMinute;
               _silentStartHour = data['silentStartHour'] ?? _silentStartHour;
-              _silentStartMinute = data['silentStartMinute'] ?? _silentStartMinute;
+              _silentStartMinute =
+                  data['silentStartMinute'] ?? _silentStartMinute;
               _silentEndHour = data['silentEndHour'] ?? _silentEndHour;
               _silentEndMinute = data['silentEndMinute'] ?? _silentEndMinute;
             });
@@ -109,7 +115,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             await prefs.setInt('floats_frequency_hours', _floatsFrequencyHours);
             await prefs.setBool('floats_enabled', _floatsEnabled);
             await prefs.setBool('report_include_tasks', _reportIncludeTasks);
-            await prefs.setBool('report_include_calendar', _reportIncludeCalendar);
+            await prefs.setBool(
+              'report_include_calendar',
+              _reportIncludeCalendar,
+            );
             await prefs.setBool('report_include_emails', _reportIncludeEmails);
             await prefs.setBool('report_include_floats', _reportIncludeFloats);
             await prefs.setInt('report_hour', _reportHour);
@@ -199,7 +208,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onSurface: Colors.black87,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFFFF5B24)),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFFF5B24),
+              ),
             ),
           ),
           child: child!,
@@ -217,10 +228,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _scheduleTestNotification() async {
+    await BackgroundScheduler.scheduleTestNotification();
+    if (!mounted) return;
+
+    final fireTime = DateTime.now().add(const Duration(minutes: 1));
+    final formattedFireTime = _formattedTime(fireTime.hour, fireTime.minute);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Test report scheduled for about $formattedFireTime.',
+          style: const TextStyle(fontFamily: 'Open Sans'),
+        ),
+        backgroundColor: const Color(0xFFFF5B24),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
   Future<void> _pickSilentHoursStart() async {
     final picked = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay(hour: _silentStartHour, minute: _silentStartMinute),
+      initialTime: TimeOfDay(
+        hour: _silentStartHour,
+        minute: _silentStartMinute,
+      ),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -229,7 +263,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onSurface: Colors.black87,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFFFF5B24)),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFFF5B24),
+              ),
             ),
           ),
           child: child!,
@@ -258,7 +294,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onSurface: Colors.black87,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFFFF5B24)),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFFF5B24),
+              ),
             ),
           ),
           child: child!,
@@ -439,12 +477,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          title: const Text('Logout', style: TextStyle(fontFamily: 'Open Sans', fontWeight: FontWeight.bold)),
-          content: const Text('Are you sure you want to logout?', style: TextStyle(fontFamily: 'Open Sans')),
+          title: const Text(
+            'Logout',
+            style: TextStyle(
+              fontFamily: 'Open Sans',
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to logout?',
+            style: TextStyle(fontFamily: 'Open Sans'),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontFamily: 'Open Sans')),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey, fontFamily: 'Open Sans'),
+              ),
             ),
             TextButton(
               onPressed: () async {
@@ -457,7 +507,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   (route) => false,
                 );
               },
-              child: const Text('Logout', style: TextStyle(color: Color(0xFFFF5B24), fontFamily: 'Open Sans')),
+              child: const Text(
+                'Logout',
+                style: TextStyle(
+                  color: Color(0xFFFF5B24),
+                  fontFamily: 'Open Sans',
+                ),
+              ),
             ),
           ],
         );
@@ -480,7 +536,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
           child: Container(
             decoration: const BoxDecoration(
               color: Colors.white,
@@ -537,7 +595,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(color: Color(0xFFFF5B24), width: 1.5),
+                      borderSide: BorderSide(
+                        color: Color(0xFFFF5B24),
+                        width: 1.5,
+                      ),
                     ),
                   ),
                 ),
@@ -563,14 +624,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         final feedback = controller.text.trim();
                         Navigator.pop(context);
                         if (feedback.isNotEmpty) {
-                          final scaffoldMessenger = ScaffoldMessenger.of(context);
+                          final scaffoldMessenger = ScaffoldMessenger.of(
+                            context,
+                          );
                           final prefs = await SharedPreferences.getInstance();
                           final userId = prefs.getString('user_id') ?? '';
                           final email = prefs.getString('user_email') ?? '';
-                          
+
                           try {
                             final response = await http.post(
-                              Uri.parse('${AppConfig.backendUrl}/api/v1/feedback'),
+                              Uri.parse(
+                                '${AppConfig.backendUrl}/api/v1/feedback',
+                              ),
                               headers: {'Content-Type': 'application/json'},
                               body: jsonEncode({
                                 'userId': userId.isNotEmpty ? userId : null,
@@ -578,20 +643,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 'text': feedback,
                               }),
                             );
-                            
-                            if (response.statusCode == 201 || response.statusCode == 200) {
+
+                            if (response.statusCode == 201 ||
+                                response.statusCode == 200) {
                               scaffoldMessenger.showSnackBar(
                                 SnackBar(
-                                  content: const Text('Feedback sent! Thank you.', style: TextStyle(fontFamily: 'Open Sans')),
+                                  content: const Text(
+                                    'Feedback sent! Thank you.',
+                                    style: TextStyle(fontFamily: 'Open Sans'),
+                                  ),
                                   backgroundColor: const Color(0xFFFF5B24),
                                   behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               );
                             } else {
                               scaffoldMessenger.showSnackBar(
                                 const SnackBar(
-                                  content: Text('Failed to submit feedback. Please try again.', style: TextStyle(fontFamily: 'Open Sans')),
+                                  content: Text(
+                                    'Failed to submit feedback. Please try again.',
+                                    style: TextStyle(fontFamily: 'Open Sans'),
+                                  ),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -600,7 +674,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             debugPrint('Error sending feedback: $e');
                             scaffoldMessenger.showSnackBar(
                               SnackBar(
-                                content: Text('Error: $e. Please check your connection.', style: TextStyle(fontFamily: 'Open Sans')),
+                                content: Text(
+                                  'Error: $e. Please check your connection.',
+                                  style: TextStyle(fontFamily: 'Open Sans'),
+                                ),
                                 backgroundColor: Colors.red,
                               ),
                             );
@@ -612,7 +689,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
                       ),
                       child: const Text(
                         'Submit',
@@ -642,7 +722,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           backgroundColor: Colors.white,
           title: const Text(
             'Help & FAQ',
-            style: TextStyle(fontFamily: 'Open Sans', fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontFamily: 'Open Sans',
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: const SingleChildScrollView(
             child: Column(
@@ -651,32 +734,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   'What is Briefly?',
-                  style: TextStyle(fontFamily: 'Open Sans', fontWeight: FontWeight.bold, fontSize: 15),
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Briefly aggregates your emails, calendar events, and tasks into a single daily report delivered at your preferred time.',
-                  style: TextStyle(fontFamily: 'Open Sans', fontSize: 13, color: Color(0xFF606060)),
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontSize: 13,
+                    color: Color(0xFF606060),
+                  ),
                 ),
                 SizedBox(height: 12),
                 Text(
                   'What are Floats?',
-                  style: TextStyle(fontFamily: 'Open Sans', fontWeight: FontWeight.bold, fontSize: 15),
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Floats are periodic reminders containing your stored wisdom or notes, delivered every N hours.',
-                  style: TextStyle(fontFamily: 'Open Sans', fontSize: 13, color: Color(0xFF606060)),
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontSize: 13,
+                    color: Color(0xFF606060),
+                  ),
                 ),
                 SizedBox(height: 12),
                 Text(
                   'How do Silent Hours work?',
-                  style: TextStyle(fontFamily: 'Open Sans', fontWeight: FontWeight.bold, fontSize: 15),
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'When Silent Hours are active, Floats will not trigger notifications unless "Send Floats During Silent Hours" is toggled ON.',
-                  style: TextStyle(fontFamily: 'Open Sans', fontSize: 13, color: Color(0xFF606060)),
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontSize: 13,
+                    color: Color(0xFF606060),
+                  ),
                 ),
               ],
             ),
@@ -684,7 +791,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close', style: TextStyle(color: Color(0xFFFF5B24), fontFamily: 'Open Sans')),
+              child: const Text(
+                'Close',
+                style: TextStyle(
+                  color: Color(0xFFFF5B24),
+                  fontFamily: 'Open Sans',
+                ),
+              ),
             ),
           ],
         );
@@ -729,19 +842,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Report Settings
                 _buildSectionHeader('Report Settings'),
                 _buildSectionCard([
-                  _buildToggleRow(
-                    'Mark emails unread',
-                    _markEmailsUnread,
-                    (val) {
-                      setState(() => _markEmailsUnread = val);
-                      _saveBool('mark_emails_unread', val);
-                    },
-                  ),
+                  _buildToggleRow('Mark emails unread', _markEmailsUnread, (
+                    val,
+                  ) {
+                    setState(() => _markEmailsUnread = val);
+                    _saveBool('mark_emails_unread', val);
+                  }),
                   const Divider(color: Color(0xFFE5E7EB), height: 1),
                   _buildTappableRow(
                     'Report Time',
                     _formattedTime(_reportHour, _reportMinute),
                     _pickReportTime,
+                  ),
+                  const Divider(color: Color(0xFFE5E7EB), height: 1),
+                  _buildActionRow(
+                    'Test report in 1 minute',
+                    const Color(0xFFFF5B24),
+                    _scheduleTestNotification,
                   ),
                 ]),
                 const SizedBox(height: 20),
@@ -749,14 +866,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Report Content
                 _buildSectionHeader('Report Content'),
                 _buildSectionCard([
-                  _buildToggleRow(
-                    'Add Tasks',
-                    _reportIncludeTasks,
-                    (val) {
-                      setState(() => _reportIncludeTasks = val);
-                      _saveBool('report_include_tasks', val);
-                    },
-                  ),
+                  _buildToggleRow('Add Tasks', _reportIncludeTasks, (val) {
+                    setState(() => _reportIncludeTasks = val);
+                    _saveBool('report_include_tasks', val);
+                  }),
                   const Divider(color: Color(0xFFE5E7EB), height: 1),
                   _buildToggleRow(
                     'Add Calendar Events',
@@ -767,37 +880,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                   const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildToggleRow(
-                    'Add Emails',
-                    _reportIncludeEmails,
-                    (val) {
-                      setState(() => _reportIncludeEmails = val);
-                      _saveBool('report_include_emails', val);
-                    },
-                  ),
+                  _buildToggleRow('Add Emails', _reportIncludeEmails, (val) {
+                    setState(() => _reportIncludeEmails = val);
+                    _saveBool('report_include_emails', val);
+                  }),
                   const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildToggleRow(
-                    'Add Floats',
-                    _reportIncludeFloats,
-                    (val) {
-                      setState(() => _reportIncludeFloats = val);
-                      _saveBool('report_include_floats', val);
-                    },
-                  ),
+                  _buildToggleRow('Add Floats', _reportIncludeFloats, (val) {
+                    setState(() => _reportIncludeFloats = val);
+                    _saveBool('report_include_floats', val);
+                  }),
                 ]),
                 const SizedBox(height: 20),
 
                 // Float Settings
                 _buildSectionHeader('Float Settings'),
                 _buildSectionCard([
-                  _buildToggleRow(
-                    'Enable Floats',
-                    _floatsEnabled,
-                    (val) {
-                      setState(() => _floatsEnabled = val);
-                      _saveBool('floats_enabled', val);
-                    },
-                  ),
+                  _buildToggleRow('Enable Floats', _floatsEnabled, (val) {
+                    setState(() => _floatsEnabled = val);
+                    _saveBool('floats_enabled', val);
+                  }),
                   Opacity(
                     opacity: _floatsEnabled ? 1.0 : 0.5,
                     child: IgnorePointer(
@@ -823,7 +924,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           const Divider(color: Color(0xFFE5E7EB), height: 1),
                           _buildTappableRow(
                             'Starts At :',
-                            _formattedTime(_silentStartHour, _silentStartMinute),
+                            _formattedTime(
+                              _silentStartHour,
+                              _silentStartMinute,
+                            ),
                             _pickSilentHoursStart,
                           ),
                           const Divider(color: Color(0xFFE5E7EB), height: 1),
@@ -846,9 +950,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Divider(color: Color(0xFFE5E7EB), height: 1),
                   _buildStaticRow('Email :', _email),
                   const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildActionRow('Logout', const Color(0xFFEA4335), _confirmLogout),
+                  _buildActionRow(
+                    'Logout',
+                    const Color(0xFFEA4335),
+                    _confirmLogout,
+                  ),
                   const Divider(color: Color(0xFFE5E7EB), height: 1),
-                  _buildActionRow('Delete Account', const Color(0xFFEA4335), _navigateToDeleteAccountScreen),
+                  _buildActionRow(
+                    'Delete Account',
+                    const Color(0xFFEA4335),
+                    _navigateToDeleteAccountScreen,
+                  ),
                 ]),
                 const SizedBox(height: 20),
 
@@ -883,7 +995,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildToggleRow(String label, bool value, ValueChanged<bool> onChanged) {
+  Widget _buildToggleRow(
+    String label,
+    bool value,
+    ValueChanged<bool> onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(

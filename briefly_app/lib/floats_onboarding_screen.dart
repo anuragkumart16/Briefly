@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'services/background_scheduler.dart';
 
 class FloatsOnboardingScreen extends StatefulWidget {
   const FloatsOnboardingScreen({super.key});
@@ -16,24 +17,28 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+    );
   }
 
   int _selectedHours = 2;
 
   final List<_FloatsPageData> _pages = const [
     _FloatsPageData(
-      description: 'Ever happened that you learned a wisdom but forgot when it needed the most?',
+      description:
+          'Ever happened that you learned a wisdom but forgot when it needed the most?',
       icon: Icons.lightbulb_outline_rounded,
     ),
     _FloatsPageData(
-      description: 'Floats are those wisdom pieces which will be delivered to you every nth hour',
+      description:
+          'Floats are those wisdom pieces which will be delivered to you every nth hour',
       icon: Icons.notifications_none_rounded,
     ),
     _FloatsPageData(
@@ -53,8 +58,12 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('floats_onboarding_done', true);
     await prefs.setInt('floats_frequency_hours', _selectedHours);
+    final floatsEnabled = prefs.getBool('floats_enabled') ?? true;
+    await BackgroundScheduler.scheduleFloats(_selectedHours, floatsEnabled);
     if (!mounted) return;
-    Navigator.of(context).pop(); // Returns to MainShell which switches to Floats tab
+    Navigator.of(
+      context,
+    ).pop(); // Returns to MainShell which switches to Floats tab
   }
 
   void _nextPage() {
@@ -152,7 +161,6 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
                           ),
                         ),
 
-
                         // Frequency display (last page only)
                         if (page.showFrequencyPicker) ...[
                           const SizedBox(height: 36),
@@ -160,13 +168,17 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
                             onTap: _showFrequencySheet,
                             child: Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 18,
+                              ),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF7F7F7),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     'Every $_selectedHours ${_selectedHours == 1 ? 'Hour' : 'Hours'}',
@@ -177,8 +189,11 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
                                       color: Color(0xFF222222),
                                     ),
                                   ),
-                                  const Icon(Icons.expand_more_rounded,
-                                      color: Color(0xFFFF5B24), size: 24),
+                                  const Icon(
+                                    Icons.expand_more_rounded,
+                                    color: Color(0xFFFF5B24),
+                                    size: 24,
+                                  ),
                                 ],
                               ),
                             ),
@@ -198,7 +213,11 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   if (!isFirst)
-                    _NavButton(label: 'Previous', onPressed: _prevPage, isPrevious: true)
+                    _NavButton(
+                      label: 'Previous',
+                      onPressed: _prevPage,
+                      isPrevious: true,
+                    )
                   else
                     const SizedBox(width: 120),
                   _NavButton(
@@ -355,7 +374,8 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       child: const Text(
                         'Continue',
@@ -377,8 +397,6 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
     );
   }
 }
-
-
 
 class _FloatsPageData {
   final String description;
@@ -416,7 +434,9 @@ class _NavButton extends StatelessWidget {
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -431,7 +451,11 @@ class _NavButton extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white,
+              size: 16,
+            ),
           ],
         ),
       );
@@ -448,7 +472,11 @@ class _NavButton extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFFF5B24), size: 16),
+          const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Color(0xFFFF5B24),
+            size: 16,
+          ),
           const SizedBox(width: 6),
           Text(
             label,
