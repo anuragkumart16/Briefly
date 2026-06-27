@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #121212;
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: #FF5B24;
+  --color-brand-hover: #E04814;
+  --color-brand-light: #FFF0EB;
+  --font-display: var(--font-arya), serif;
+  --font-sans: var(--font-open-sans), sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-open-sans), sans-serif;
+}
+
+/* Custom transitions and premium design touches */
+.premium-glow {
+  box-shadow: 0 0 40px -10px rgba(255, 91, 36, 0.15);
+}
+
+.iphone-notch {
+  width: 110px;
+  height: 24px;
+  background: #000;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.bg-grid {
+  background-image: radial-gradient(rgba(255, 91, 36, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.dot-pattern {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+}
+
