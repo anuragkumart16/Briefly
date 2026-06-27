@@ -1,4 +1,6 @@
 import prisma from "../config/prisma";
+import { appConfig } from "../config/envConfig";
+
 
 export enum JobStatus {
     UNKNOWN = 0,
@@ -119,7 +121,7 @@ export interface HistoryItem {
 const base_url : string = "https://api.cron-job.org"
 
 const headers = {
-    'Authorization': `Bearer ${process.env.CRON_JOB_TOKEN}`,
+    'Authorization': `Bearer ${appConfig.cronJobToken}`,
     'Content-Type': 'application/json'
 }
 
@@ -386,7 +388,7 @@ export async function setupOrUpdateUserCron(
     timezone: string = "Asia/Kolkata"
 ): Promise<number | null> {
     try {
-        const serverBaseUrl = process.env.SERVER_BASE_URL;
+        const serverBaseUrl = appConfig.serverBaseUrl;
         if (!serverBaseUrl) {
             console.warn("SERVER_BASE_URL is not set in environment. Skipping cron job configuration.");
             return null;

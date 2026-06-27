@@ -2,6 +2,8 @@ import * as admin from "firebase-admin";
 import * as fs from "fs";
 import * as path from "path";
 import prisma from "../config/prisma";
+import { appConfig } from "../config/envConfig";
+
 
 let isInitialized = false;
 
@@ -14,7 +16,7 @@ export function initFirebase() {
             return;
         }
 
-        const serviceAccountVar = process.env.FIREBASE_SERVICE_ACCOUNT;
+        const serviceAccountVar = appConfig.firebaseServiceAccount;
         if (serviceAccountVar) {
             let parsedCreds;
             try {

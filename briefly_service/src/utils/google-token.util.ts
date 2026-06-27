@@ -1,4 +1,6 @@
 import prisma from "../config/prisma";
+import { appConfig } from "../config/envConfig";
+
 
 /**
  * Resolves a valid, non-expired Google Access Token for a user.
@@ -21,8 +23,8 @@ export async function getValidGoogleToken(userId: string): Promise<string> {
             throw new Error("Google refresh token is missing. Please sign in again.");
         }
 
-        const clientId = process.env.GOOGLE_CLIENT_ID || "";
-        const clientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
+        const clientId = appConfig.googleClientId;
+        const clientSecret = appConfig.googleClientSecret;
 
         if (!clientId || !clientSecret) {
             throw new Error("Server OAuth configuration error: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is missing in environment variables.");

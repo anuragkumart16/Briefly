@@ -1,4 +1,6 @@
 import winston from 'winston';
+import { appConfig } from "../config/envConfig";
+
 
 /**
  * Winston Logger Configuration.
@@ -11,7 +13,7 @@ import winston from 'winston';
  * - Transports: Console transport.
  */
 export const logger = winston.createLogger({
-    level: process.env.LOG_LEVEL || "info",
+    level: appConfig.logLevel,
     format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.errors(),

@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import ApiResponse from "../utils/response.util";
 import prisma from "../config/prisma";
+import { appConfig } from "../config/envConfig";
+
 import { setupOrUpdateUserCron } from "../services/cron.service";
 
 /**
@@ -20,8 +22,8 @@ const googleAuth = async (req: Request, res: Response) => {
     }
 
     try {
-        const clientId = process.env.GOOGLE_CLIENT_ID || "";
-        const clientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
+        const clientId = appConfig.googleClientId;
+        const clientSecret = appConfig.googleClientSecret;
 
         if (!clientId || !clientSecret) {
             console.error("Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in .env");

@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import ApiResponse from "../utils/response.util";
 import prisma from "../config/prisma";
+import { appConfig } from "../config/envConfig";
+
 import { getValidGoogleToken } from "../utils/google-token.util";
 import { sendNotificationToUser } from "../services/fcm.service";
 
@@ -217,7 +219,7 @@ export async function compileDailyReport(userId: string, timeMin: string, timeMa
     }
 
     // 7. Request Report summary from Groq API (openai/gpt-oss-120b)
-    const groqApiKey = process.env.GROQ_API_KEY;
+    const groqApiKey = appConfig.groqApiKey;
     if (!groqApiKey) {
         throw new Error("Server configuration error: AI service unavailable");
     }
