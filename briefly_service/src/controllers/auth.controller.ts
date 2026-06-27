@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import ApiResponse from "../utils/response.util";
 import prisma from "../config/prisma";
+import { setupOrUpdateUserCron } from "../services/cron.service";
 
 /**
  * Google Authentication Controller.
@@ -120,11 +121,14 @@ const googleAuth = async (req: Request, res: Response) => {
             where: { userId: user.id }
         });
         if (!existingSettings) {
-            await prisma.settings.create({
+            const defaultSettings = await prisma.settings.create({
                 data: {
                     userId: user.id
                 }
             });
+            await setupOrUpdateUserCron(user.id, defaultSettings.reportHour, defaultSettings.reportMinute, defaultSettings.timezone);
+        } else if (!existingSettings.cronJobId) {
+            await setupOrUpdateUserCron(user.id, existingSettings.reportHour, existingSettings.reportMinute, existingSettings.timezone);
         }
 
         console.log(`User ${email} authenticated successfully.`);

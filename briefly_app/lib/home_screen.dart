@@ -27,6 +27,8 @@ class HomeScreen extends StatelessWidget {
 class HomeBody extends StatefulWidget {
   const HomeBody({super.key});
 
+  static VoidCallback? refreshCachedReport;
+
   @override
   State<HomeBody> createState() => _HomeBodyState();
 }
@@ -46,7 +48,16 @@ class _HomeBodyState extends State<HomeBody> {
   @override
   void initState() {
     super.initState();
+    HomeBody.refreshCachedReport = _loadCachedReport;
     _initializeDashboard();
+  }
+
+  @override
+  void dispose() {
+    if (HomeBody.refreshCachedReport == _loadCachedReport) {
+      HomeBody.refreshCachedReport = null;
+    }
+    super.dispose();
   }
 
   Future<void> _initializeDashboard() async {

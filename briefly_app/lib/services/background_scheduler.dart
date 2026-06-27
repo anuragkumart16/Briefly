@@ -105,71 +105,7 @@ Future<void> _runDailyReportAlarm({
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Float alarm — runs in background isolate
-// ─────────────────────────────────────────────────────────────────────────────
-@pragma('vm:entry-point')
-void periodicFloatsAlarmCallback() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await NotificationHelper.init();
 
-  final prefs = await SharedPreferences.getInstance();
-  final userId = prefs.getString('user_id') ?? '';
-  final floatsEnabled = prefs.getBool('floats_enabled') ?? true;
-  final sendFloatsSilent = prefs.getBool('send_floats_silent') ?? true;
-
-  if (userId.isEmpty || !floatsEnabled) return;
-
-  // Check silent hours
-  if (!sendFloatsSilent) {
-    final silentStartHour = prefs.getInt('silent_start_hour') ?? 12;
-    final silentStartMinute = prefs.getInt('silent_start_minute') ?? 0;
-    final silentEndHour = prefs.getInt('silent_end_hour') ?? 6;
-    final silentEndMinute = prefs.getInt('silent_end_minute') ?? 0;
-
-    final now = DateTime.now();
-    final currentMinutes = now.hour * 60 + now.minute;
-    final startMinutes = silentStartHour * 60 + silentStartMinute;
-    final endMinutes = silentEndHour * 60 + silentEndMinute;
-
-    bool isSilent;
-    if (startMinutes < endMinutes) {
-      isSilent = currentMinutes >= startMinutes && currentMinutes <= endMinutes;
-    } else {
-      isSilent = currentMinutes >= startMinutes || currentMinutes <= endMinutes;
-    }
-
-    if (isSilent) return;
-  }
-
-  try {
-    final response = await http
-        .get(Uri.parse('${AppConfig.backendUrl}/api/v1/users/$userId/floats'))
-        .timeout(const Duration(seconds: 15));
-
-    if (response.statusCode == 200) {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      if (body['success'] == true && body['data'] != null) {
-        final floatsData = body['data'] as List<dynamic>;
-        final activeFloats = floatsData
-            .where((j) => j['isActive'] == true)
-            .map((j) => j['text'] as String)
-            .toList();
-
-        if (activeFloats.isNotEmpty) {
-          final random = Random();
-          final selectedFloat =
-              activeFloats[random.nextInt(activeFloats.length)];
-          await NotificationHelper.showNotification(
-            id: 200 + random.nextInt(100),
-            title: 'Briefly Floats 💡',
-            body: selectedFloat,
-          );
-        }
-      }
-    }
-  } catch (_) {}
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Test alarm — runs in background isolate
@@ -260,16 +196,6 @@ class BackgroundScheduler {
   static Future<void> scheduleFloats(int frequencyHours, bool enabled) async {
     if (kIsWeb || !Platform.isAndroid) return;
     await AndroidAlarmManager.cancel(_periodicFloatsAlarmId);
-    if (!enabled || frequencyHours <= 0) return;
-
-    await AndroidAlarmManager.periodic(
-      Duration(hours: frequencyHours),
-      _periodicFloatsAlarmId,
-      periodicFloatsAlarmCallback,
-      exact: false,
-      wakeup: true,
-      rescheduleOnReboot: true,
-    );
   }
 
   static Future<void> scheduleTestNotification() async {

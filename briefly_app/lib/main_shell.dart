@@ -96,6 +96,16 @@ class _MainShellState extends State<MainShell> {
     }
     await BackgroundScheduler.scheduleFloats(floatsFrequencyHours, floatsEnabled);
     await BackgroundScheduler.scheduleFloatsSync();
+
+    final openFloats = prefs.getBool('open_floats_from_notification') ?? false;
+    if (openFloats) {
+      await prefs.setBool('open_floats_from_notification', false);
+      if (mounted) {
+        setState(() {
+          _selectedIndex = 1;
+        });
+      }
+    }
   }
 
   Future<void> _checkAppUpdate() async {

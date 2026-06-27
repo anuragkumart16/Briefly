@@ -24,7 +24,6 @@ export function initFirebase() {
                     const decoded = Buffer.from(serviceAccountVar, "base64").toString("utf8");
                     parsedCreds = JSON.parse(decoded);
                 } catch {
-                    // If it is not JSON or base64 JSON, it might be a file path
                     if (fs.existsSync(serviceAccountVar)) {
                         parsedCreds = JSON.parse(fs.readFileSync(serviceAccountVar, "utf8"));
                     } else {
@@ -120,7 +119,6 @@ export async function sendNotificationToUser(
                 console.log(`Notification sent successfully to token (user: ${user.email})`);
             } catch (err: any) {
                 console.error(`Failed to send notification to token:`, err.message);
-                // Stale/Invalid tokens usually return code "messaging/registration-token-not-registered" or "messaging/invalid-registration-token"
                 if (
                     err.code === "messaging/registration-token-not-registered" ||
                     err.code === "messaging/invalid-registration-token"
@@ -132,7 +130,6 @@ export async function sendNotificationToUser(
 
         await Promise.all(sendPromises);
 
-        // Remove stale/invalid tokens from DB if any were found
         if (tokensToRemove.length > 0) {
             console.log(`Cleaning up ${tokensToRemove.length} invalid/stale FCM tokens for user ${user.email}.`);
             await prisma.user.update({

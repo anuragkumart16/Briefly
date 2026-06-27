@@ -1,3 +1,5 @@
+import prisma from "../config/prisma";
+
 export enum JobStatus {
     UNKNOWN = 0,
     OK = 1,
@@ -371,4 +373,72 @@ export async function deleteFolder(id: string): Promise<void> {
         headers
     });
     await handleResponse<Record<string, never>>(response);
+}
+
+/**
+ * Higher-level helper to automatically create or update a user's report cron job on cron-job.org.
+ * Saves the cronJobId in the database settings.
+ */
+export async function setupOrUpdateUserCron(
+    userId: string,
+    reportHour: number,
+    reportMinute: number,
+    timezone: string = "Asia/Kolkata"
+): Promise<number | null> {
+    try {
+        const serverBaseUrl = process.env.SERVER_BASE_URL;
+        if (!serverBaseUrl) {
+            console.warn("SERVER_BASE_URL is not set in environment. Skipping cron job configuration.");
+            return null;
+        }
+
+        // Retrieve the Briefly Reports folder ID
+        const folderConstant = await prisma.appConstants.findUnique({
+            where: { key: "BRIEFLY_REPORTS_FOLDER_ID" }
+        });
+        const folderId = folderConstant ? Number(folderConstant.value) : 0;
+
+        const settings = await prisma.settings.findUnique({
+            where: { userId }
+        });
+
+        const triggerUrl = `${serverBaseUrl}/api/v1/users/${userId}/trigger-report`;
+        const schedule = {
+            timezone,
+            hours: [reportHour],
+            minutes: [reportMinute],
+            mdays: [-1],
+            months: [-1],
+            wdays: [-1]
+        };
+
+        if (settings?.cronJobId) {
+            console.log(`Updating existing cron job ${settings.cronJobId} for user ${userId}...`);
+            await updateCronJob(String(settings.cronJobId), {
+                enabled: true,
+                schedule
+            });
+            return settings.cronJobId;
+        } else {
+            console.log(`Creating new cron job for user ${userId}...`);
+            const jobId = await createCronJob({
+                title: `Briefly Daily Report - ${userId}`,
+                url: triggerUrl,
+                enabled: true,
+                folderId,
+                requestMethod: 1, // RequestMethod.POST
+                schedule
+            });
+
+            await prisma.settings.update({
+                where: { userId },
+                data: { cronJobId: jobId }
+            });
+
+            return jobId;
+        }
+    } catch (err: any) {
+        console.error(`Failed to setup/update cron job for user ${userId}:`, err.message || err);
+        return null;
+    }
 }

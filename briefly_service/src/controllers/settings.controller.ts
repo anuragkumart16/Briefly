@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import ApiResponse from "../utils/response.util";
 import prisma from "../config/prisma";
+import { setupOrUpdateUserCron } from "../services/cron.service";
 
 /**
  * Get User Settings.
@@ -66,6 +67,13 @@ const updateSettings = async (req: Request, res: Response) => {
         });
 
         console.log(`Updated settings for user ${userId}:`, updateData);
+
+        if (updateData.reportHour !== undefined || updateData.reportMinute !== undefined || updateData.timezone !== undefined) {
+            const currentHour = updateData.reportHour !== undefined ? updateData.reportHour : settings.reportHour;
+            const currentMinute = updateData.reportMinute !== undefined ? updateData.reportMinute : settings.reportMinute;
+            const currentTimezone = updateData.timezone !== undefined ? updateData.timezone : settings.timezone;
+            await setupOrUpdateUserCron(userId, currentHour, currentMinute, currentTimezone);
+        }
 
         return ApiResponse(res, 200, "User settings updated successfully", settings);
     } catch (error: any) {

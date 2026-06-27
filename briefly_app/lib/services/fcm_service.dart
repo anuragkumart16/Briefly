@@ -23,7 +23,6 @@ class FcmService {
       await Firebase.initializeApp();
       FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-      // Handle message when app is in foreground
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         debugPrint('Got a message whilst in the foreground!');
         debugPrint('Message data: ${message.data}');
@@ -45,7 +44,7 @@ class FcmService {
               id: message.messageId.hashCode,
               title: notification.title ?? 'Briefly',
               body: notification.body ?? '',
-              payload: message.data['payload'],
+              payload: message.data['type'] == 'floats' ? 'floats' : message.data['payload'],
             );
           }
         }
@@ -86,12 +85,11 @@ class FcmService {
     }
   }
 
-  /// Process notification custom data and navigate
   static void _handleNotificationData(Map<String, dynamic> data) {
     final type = data['type'] ?? '';
-    if (type == 'daily_report' || data['click_action'] == 'FLUTTER_NOTIFICATION_CLICK') {
+    if (type == 'daily_report' || type == 'floats' || data['click_action'] == 'FLUTTER_NOTIFICATION_CLICK') {
       if (NotificationHelper.onNotificationTap != null) {
-        NotificationHelper.onNotificationTap!('daily_report');
+        NotificationHelper.onNotificationTap!(type.isNotEmpty ? type : 'daily_report');
       }
     }
   }

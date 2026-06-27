@@ -64,6 +64,16 @@ void main() async {
 
       navigatorKey.currentState?.push(
         MaterialPageRoute(builder: (_) => const ReportScreen()),
+      ).then((_) {
+        HomeBody.refreshCachedReport?.call();
+      });
+    } else if (payload == 'floats') {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('open_floats_from_notification', true);
+      
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
       );
     }
   };
