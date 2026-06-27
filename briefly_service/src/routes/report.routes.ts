@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getDailyReport } from "../controllers/report.controller";
+import { getDailyReport, triggerDailyReport } from "../controllers/report.controller";
 
 /**
  * Report Routes.
@@ -10,5 +10,8 @@ const router = Router();
 
 router.route("/:userId/report")
     .get(getDailyReport);
+
+router.route("/:userId/trigger-report")
+    .post(triggerDailyReport);
 
 export default router;

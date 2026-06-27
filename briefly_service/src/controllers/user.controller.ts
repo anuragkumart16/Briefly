@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import ApiResponse from "../utils/response.util";
 import prisma from "../config/prisma";
+import { deleteCronJob } from "../services/cron.service";
 
 /**
  * Delete User Account.
@@ -18,6 +19,20 @@ const deleteUser = async (req: Request, res: Response) => {
     }
 
     try {
+        const settings = await prisma.settings.findUnique({
+            where: { userId },
+            select: { cronJobId: true }
+        });
+
+        if (settings?.cronJobId) {
+            console.log(`Deleting cron job ${settings.cronJobId} for deleted user ${userId}...`);
+            try {
+                await deleteCronJob(String(settings.cronJobId));
+            } catch (err: any) {
+                console.error(`Failed to delete cron job ${settings.cronJobId} on account deletion:`, err.message || err);
+            }
+        }
+
         await prisma.user.delete({
             where: { id: userId }
         });
