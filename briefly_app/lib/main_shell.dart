@@ -28,7 +28,8 @@ class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
 
-  final GlobalKey<FloatsBodyState> _floatsBodyKey = GlobalKey<FloatsBodyState>();
+  final GlobalKey<FloatsBodyState> _floatsBodyKey =
+      GlobalKey<FloatsBodyState>();
 
   // Controllers owned here so search bar stays alive across tab switches
   final TextEditingController _floatsSearchController = TextEditingController();
@@ -52,10 +53,12 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
     _loadSavedTime();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -76,7 +79,8 @@ class _MainShellState extends State<MainShell> {
     final floatsEnabled = prefs.getBool('floats_enabled') ?? true;
     final floatsFrequencyHours = prefs.getInt('floats_frequency_hours') ?? 2;
     final name = prefs.getString('user_name') ?? 'Anurag';
-    final email = prefs.getString('user_email') ?? 'anuragkumartiwari12@gmail.com';
+    final email =
+        prefs.getString('user_email') ?? 'anuragkumartiwari12@gmail.com';
     final pictureUrl = prefs.getString('user_picture');
     if (mounted) {
       setState(() {
@@ -94,7 +98,10 @@ class _MainShellState extends State<MainShell> {
     if (hour != null && minute != null) {
       await BackgroundScheduler.scheduleDailyReport(hour, minute);
     }
-    await BackgroundScheduler.scheduleFloats(floatsFrequencyHours, floatsEnabled);
+    await BackgroundScheduler.scheduleFloats(
+      floatsFrequencyHours,
+      floatsEnabled,
+    );
     await BackgroundScheduler.scheduleFloatsSync();
 
     final openFloats = prefs.getBool('open_floats_from_notification') ?? false;
@@ -133,13 +140,19 @@ class _MainShellState extends State<MainShell> {
               children: [
                 Text(
                   'A new version (${info.version}) of Briefly is available.',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 if (info.releaseNotes.isNotEmpty) ...[
                   const Text(
                     'Release Notes:',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(info.releaseNotes),
@@ -151,7 +164,10 @@ class _MainShellState extends State<MainShell> {
             actions: [
               if (!info.mandatory)
                 TextButton(
-                  child: const Text('Later', style: TextStyle(color: Colors.grey)),
+                  child: const Text(
+                    'Later',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ElevatedButton(
@@ -244,7 +260,10 @@ class _MainShellState extends State<MainShell> {
           ),
           actions: [
             TextButton(
-              child: const Text('OK', style: TextStyle(color: Color(0xFFFF5B24))),
+              child: const Text(
+                'OK',
+                style: TextStyle(color: Color(0xFFFF5B24)),
+              ),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
@@ -291,7 +310,9 @@ class _MainShellState extends State<MainShell> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             'Enable Floats?',
             style: TextStyle(
@@ -328,13 +349,18 @@ class _MainShellState extends State<MainShell> {
                 setState(() {
                   _floatsEnabled = true;
                 });
-                await BackgroundScheduler.scheduleFloats(_floatsFrequencyHours, true);
+                await BackgroundScheduler.scheduleFloats(
+                  _floatsFrequencyHours,
+                  true,
+                );
                 _onTabTapped(1);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF5B24),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 elevation: 0,
               ),
               child: const Text(
@@ -357,10 +383,15 @@ class _MainShellState extends State<MainShell> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             'Help & FAQ',
-            style: TextStyle(fontFamily: 'Open Sans', fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontFamily: 'Open Sans',
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: const SingleChildScrollView(
             child: Column(
@@ -369,32 +400,56 @@ class _MainShellState extends State<MainShell> {
               children: [
                 Text(
                   'What is Briefly?',
-                  style: TextStyle(fontFamily: 'Open Sans', fontWeight: FontWeight.bold, fontSize: 15),
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Briefly aggregates your emails, calendar events, and tasks into a single daily report delivered at your preferred time.',
-                  style: TextStyle(fontFamily: 'Open Sans', fontSize: 13, color: Color(0xFF606060)),
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontSize: 13,
+                    color: Color(0xFF606060),
+                  ),
                 ),
                 SizedBox(height: 12),
                 Text(
                   'What are Floats?',
-                  style: TextStyle(fontFamily: 'Open Sans', fontWeight: FontWeight.bold, fontSize: 15),
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Floats are periodic reminders containing your stored wisdom or notes, delivered every N hours.',
-                  style: TextStyle(fontFamily: 'Open Sans', fontSize: 13, color: Color(0xFF606060)),
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontSize: 13,
+                    color: Color(0xFF606060),
+                  ),
                 ),
                 SizedBox(height: 12),
                 Text(
                   'How do Silent Hours work?',
-                  style: TextStyle(fontFamily: 'Open Sans', fontWeight: FontWeight.bold, fontSize: 15),
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'When Silent Hours are active, Floats will not trigger notifications unless "Send Floats During Silent Hours" is toggled ON.',
-                  style: TextStyle(fontFamily: 'Open Sans', fontSize: 13, color: Color(0xFF606060)),
+                  style: TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontSize: 13,
+                    color: Color(0xFF606060),
+                  ),
                 ),
               ],
             ),
@@ -402,7 +457,14 @@ class _MainShellState extends State<MainShell> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close', style: TextStyle(color: Color(0xFFFF5B24), fontFamily: 'Open Sans', fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Close',
+                style: TextStyle(
+                  color: Color(0xFFFF5B24),
+                  fontFamily: 'Open Sans',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -418,7 +480,9 @@ class _MainShellState extends State<MainShell> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
           child: Container(
             decoration: const BoxDecoration(
               color: Colors.white,
@@ -475,7 +539,10 @@ class _MainShellState extends State<MainShell> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(color: Color(0xFFFF5B24), width: 1.5),
+                      borderSide: BorderSide(
+                        color: Color(0xFFFF5B24),
+                        width: 1.5,
+                      ),
                     ),
                   ),
                 ),
@@ -501,14 +568,18 @@ class _MainShellState extends State<MainShell> {
                         final feedback = controller.text.trim();
                         Navigator.pop(context);
                         if (feedback.isNotEmpty) {
-                          final scaffoldMessenger = ScaffoldMessenger.of(context);
+                          final scaffoldMessenger = ScaffoldMessenger.of(
+                            context,
+                          );
                           final prefs = await SharedPreferences.getInstance();
                           final userId = prefs.getString('user_id') ?? '';
                           final email = prefs.getString('user_email') ?? '';
-                          
+
                           try {
                             final response = await http.post(
-                              Uri.parse('${AppConfig.backendUrl}/api/v1/feedback'),
+                              Uri.parse(
+                                '${AppConfig.backendUrl}/api/v1/feedback',
+                              ),
                               headers: {'Content-Type': 'application/json'},
                               body: jsonEncode({
                                 'userId': userId.isNotEmpty ? userId : null,
@@ -516,8 +587,9 @@ class _MainShellState extends State<MainShell> {
                                 'text': feedback,
                               }),
                             );
-                            
-                            if (response.statusCode == 201 || response.statusCode == 200) {
+
+                            if (response.statusCode == 201 ||
+                                response.statusCode == 200) {
                               scaffoldMessenger.showSnackBar(
                                 SnackBar(
                                   content: const Text(
@@ -526,13 +598,18 @@ class _MainShellState extends State<MainShell> {
                                   ),
                                   backgroundColor: const Color(0xFFFF5B24),
                                   behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               );
                             } else {
                               scaffoldMessenger.showSnackBar(
                                 const SnackBar(
-                                  content: Text('Failed to submit feedback. Please try again.', style: TextStyle(fontFamily: 'Open Sans')),
+                                  content: Text(
+                                    'Failed to submit feedback. Please try again.',
+                                    style: TextStyle(fontFamily: 'Open Sans'),
+                                  ),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -541,7 +618,10 @@ class _MainShellState extends State<MainShell> {
                             debugPrint('Error sending feedback: $e');
                             scaffoldMessenger.showSnackBar(
                               SnackBar(
-                                content: Text('Error: $e. Please check your connection.', style: TextStyle(fontFamily: 'Open Sans')),
+                                content: Text(
+                                  'Error: $e. Please check your connection.',
+                                  style: TextStyle(fontFamily: 'Open Sans'),
+                                ),
                                 backgroundColor: Colors.red,
                               ),
                             );
@@ -553,7 +633,10 @@ class _MainShellState extends State<MainShell> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
                       ),
                       child: const Text(
                         'Submit',
@@ -575,18 +658,21 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-
-
   void _confirmLogout() {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             'Sign Out',
-            style: TextStyle(fontFamily: 'Open Sans', fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontFamily: 'Open Sans',
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: const Text(
             'Are you sure you want to sign out?',
@@ -597,7 +683,11 @@ class _MainShellState extends State<MainShell> {
               onPressed: () => Navigator.pop(context),
               child: const Text(
                 'Cancel',
-                style: TextStyle(color: Colors.grey, fontFamily: 'Open Sans', fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontFamily: 'Open Sans',
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             TextButton(
@@ -621,7 +711,11 @@ class _MainShellState extends State<MainShell> {
               },
               child: const Text(
                 'Sign Out',
-                style: TextStyle(color: Color(0xFFFF5B24), fontFamily: 'Open Sans', fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Color(0xFFFF5B24),
+                  fontFamily: 'Open Sans',
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -650,7 +744,9 @@ class _MainShellState extends State<MainShell> {
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFFFF5B24) : const Color(0xFF606060),
+              color: isSelected
+                  ? const Color(0xFFFF5B24)
+                  : const Color(0xFF606060),
               size: 22,
             ),
             const SizedBox(width: 16),
@@ -661,7 +757,9 @@ class _MainShellState extends State<MainShell> {
                   fontFamily: 'Open Sans',
                   fontSize: 15,
                   fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-                  color: isSelected ? const Color(0xFFFF5B24) : const Color(0xFF222222),
+                  color: isSelected
+                      ? const Color(0xFFFF5B24)
+                      : const Color(0xFF222222),
                 ),
               ),
             ),
@@ -700,21 +798,23 @@ class _MainShellState extends State<MainShell> {
                 userEmail: _userEmail,
                 userPictureUrl: _userPictureUrl,
                 onSettingsTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsScreen(),
-                    ),
-                  ).then((_) async {
-                    await _loadSavedTime();
-                    if (!_floatsEnabled && _selectedIndex == 1) {
-                      setState(() => _selectedIndex = 0);
-                      _pageController.animateToPage(
-                        0,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
-                    }
-                  });
+                  Navigator.of(context)
+                      .push(
+                        MaterialPageRoute(
+                          builder: (context) => const SettingsScreen(),
+                        ),
+                      )
+                      .then((_) async {
+                        await _loadSavedTime();
+                        if (!_floatsEnabled && _selectedIndex == 1) {
+                          setState(() => _selectedIndex = 0);
+                          _pageController.animateToPage(
+                            0,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
+                        }
+                      });
                 },
               );
             },
@@ -784,23 +884,26 @@ class _MainShellState extends State<MainShell> {
                             end: Alignment.bottomRight,
                           ),
                         ),
-                        child: _userPictureUrl != null && _userPictureUrl!.isNotEmpty
+                        child:
+                            _userPictureUrl != null &&
+                                _userPictureUrl!.isNotEmpty
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(26),
                                 child: Image.network(
                                   _userPictureUrl!,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Center(
-                                    child: Text(
-                                      _userInitials,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w500,
-                                        fontFamily: 'Open Sans',
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Center(
+                                        child: Text(
+                                          _userInitials,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.w500,
+                                            fontFamily: 'Open Sans',
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
                                 ),
                               )
                             : Center(
@@ -873,9 +976,14 @@ class _MainShellState extends State<MainShell> {
                     },
                     trailing: _floatsEnabled
                         ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFF5B24).withValues(alpha: 0.1),
+                              color: const Color(
+                                0xFFFF5B24,
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Text(
@@ -889,7 +997,10 @@ class _MainShellState extends State<MainShell> {
                             ),
                           )
                         : Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.grey.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
@@ -912,21 +1023,23 @@ class _MainShellState extends State<MainShell> {
                     isSelected: false,
                     onTap: () {
                       _scaffoldKey.currentState?.closeDrawer();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const SettingsScreen(),
-                        ),
-                      ).then((_) async {
-                        await _loadSavedTime();
-                        if (!_floatsEnabled && _selectedIndex == 1) {
-                          setState(() => _selectedIndex = 0);
-                          _pageController.animateToPage(
-                            0,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        }
-                      });
+                      Navigator.of(context)
+                          .push(
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsScreen(),
+                            ),
+                          )
+                          .then((_) async {
+                            await _loadSavedTime();
+                            if (!_floatsEnabled && _selectedIndex == 1) {
+                              setState(() => _selectedIndex = 0);
+                              _pageController.animateToPage(
+                                0,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                          });
                     },
                   ),
                   const SizedBox(height: 8),
@@ -936,7 +1049,7 @@ class _MainShellState extends State<MainShell> {
                     isSelected: false,
                     onTap: () {
                       _scaffoldKey.currentState?.closeDrawer();
-                       _showFeedbackBottomSheet();
+                      _showFeedbackBottomSheet();
                     },
                   ),
                   const SizedBox(height: 8),
@@ -963,7 +1076,10 @@ class _MainShellState extends State<MainShell> {
                     onTap: _confirmLogout,
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8.0,
+                        horizontal: 8.0,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: const [
@@ -973,29 +1089,16 @@ class _MainShellState extends State<MainShell> {
                             size: 20,
                           ),
                           SizedBox(width: 12),
-                           Text(
-                             'Sign Out',
-                             style: TextStyle(
-                               fontFamily: 'Open Sans',
-                               fontSize: 15,
-                               fontWeight: FontWeight.w500,
-                               color: Color(0xFFEA4335),
-                             ),
-                           ),
+                          Text(
+                            'Sign Out',
+                            style: TextStyle(
+                              fontFamily: 'Open Sans',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFFEA4335),
+                            ),
+                          ),
                         ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Padding(
-                    padding: EdgeInsets.only(left: 8.0),
-                    child: Text(
-                      'Version 1.0.0',
-                      style: TextStyle(
-                        fontFamily: 'Open Sans',
-                        fontSize: 12,
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w300,
                       ),
                     ),
                   ),
@@ -1018,7 +1121,8 @@ class _KeepAlive extends StatefulWidget {
   State<_KeepAlive> createState() => _KeepAliveState();
 }
 
-class _KeepAliveState extends State<_KeepAlive> with AutomaticKeepAliveClientMixin {
+class _KeepAliveState extends State<_KeepAlive>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
