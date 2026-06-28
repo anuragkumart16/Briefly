@@ -34,6 +34,28 @@ function getLocalDayRange(timezone: string = "Asia/Kolkata") {
 }
 
 /**
+ * Calculates the UTC Date representing the user's scheduled report time for a given base date and timezone.
+ */
+function getSetReportTime(baseDate: Date, timezone: string, reportHour: number, reportMinute: number): Date {
+    const tzString = baseDate.toLocaleString("en-US", { timeZone: timezone });
+    const localDate = new Date(tzString);
+    
+    const year = localDate.getFullYear();
+    const month = String(localDate.getMonth() + 1).padStart(2, '0');
+    const day = String(localDate.getDate()).padStart(2, '0');
+    
+    const setTimeStr = `${year}-${month}-${day}T${String(reportHour).padStart(2, '0')}:${String(reportMinute).padStart(2, '0')}:00`;
+    
+    const getUtcDate = (dateStr: string) => {
+        const invDate = new Date(new Date(dateStr).toLocaleString("en-US", { timeZone: timezone }));
+        const diff = new Date(dateStr).getTime() - invDate.getTime();
+        return new Date(new Date(dateStr).getTime() + diff);
+    };
+    
+    return getUtcDate(setTimeStr);
+}
+
+/**
  * Core helper to compile the daily report via Groq API.
  */
 export async function compileDailyReport(userId: string, timeMin: string, timeMax: string): Promise<any> {
@@ -54,6 +76,13 @@ export async function compileDailyReport(userId: string, timeMin: string, timeMa
     const includeEmails   = settings?.reportIncludeEmails   ?? true;
     const markEmailsUnread = settings?.markEmailsUnread     ?? true;
 
+    const timezone = settings?.timezone || "Asia/Kolkata";
+    const reportHour = settings?.reportHour ?? 20;
+    const reportMinute = settings?.reportMinute ?? 30;
+
+    const baseDate = timeMin ? new Date(timeMin) : new Date();
+    const setReportTime = getSetReportTime(baseDate, timezone, reportHour, reportMinute);
+
     // 2. Resolve a valid, non-expired Google Access Token
     const accessToken = await getValidGoogleToken(userId);
 
@@ -70,7 +99,9 @@ export async function compileDailyReport(userId: string, timeMin: string, timeMa
     let calendarEvents: any[] = [];
     if (includeCalendar) {
         try {
-            const calendarUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime`;
+            const calendarTimeMin = setReportTime.toISOString();
+            const calendarTimeMax = new Date(setReportTime.getTime() + 24 * 60 * 60 * 1000).toISOString();
+            const calendarUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(calendarTimeMin)}&timeMax=${encodeURIComponent(calendarTimeMax)}&singleEvents=true&orderBy=startTime`;
             const calendarResponse = await fetch(calendarUrl, {
                 headers: { Authorization: `Bearer ${accessToken}` },
             });
@@ -123,9 +154,10 @@ export async function compileDailyReport(userId: string, timeMin: string, timeMa
                         if (tasksData.items) {
                             tasks = tasksData.items.map((task: any) => {
                                 const dueDate = task.due ? new Date(task.due) : null;
-                                const today = new Date();
+                                const refDate = new Date(setReportTime);
+                                refDate.setHours(0, 0, 0, 0);
                                 const daysUntilDue = dueDate
-                                    ? Math.ceil((dueDate.getTime() - today.setHours(0,0,0,0)) / 86400000)
+                                    ? Math.ceil((dueDate.getTime() - refDate.getTime()) / 86400000)
                                     : null;
                                 return {
                                     title: task.title || "Untitled Task",
@@ -154,8 +186,8 @@ export async function compileDailyReport(userId: string, timeMin: string, timeMa
     let emails: any[] = [];
     if (includeEmails) {
         try {
-            const unixSeconds = Math.floor(new Date(timeMin).getTime() / 1000);
-            const gmailQuery = `is:unread after:${unixSeconds} -category:promotions -category:social`;
+            const emailStartUnix = Math.floor((setReportTime.getTime() - 24 * 60 * 60 * 1000) / 1000);
+            const gmailQuery = `is:unread after:${emailStartUnix} -category:promotions -category:social`;
             const gmailUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(gmailQuery)}&maxResults=10`;
 
             const gmailResponse = await fetch(gmailUrl, {
