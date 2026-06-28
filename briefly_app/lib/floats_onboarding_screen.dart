@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/background_scheduler.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'config.dart';
 
 class FloatsOnboardingScreen extends StatefulWidget {
   const FloatsOnboardingScreen({super.key});
@@ -58,6 +61,18 @@ class _FloatsOnboardingScreenState extends State<FloatsOnboardingScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('floats_onboarding_done', true);
     await prefs.setInt('floats_frequency_hours', _selectedHours);
+    final userId = prefs.getString('user_id') ?? '';
+    if (userId.isNotEmpty) {
+      try {
+        await http.put(
+          Uri.parse('${AppConfig.backendUrl}/api/v1/users/$userId/settings'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'floatsFrequencyHours': _selectedHours}),
+        );
+      } catch (e) {
+        debugPrint('Failed to sync onboarding floats frequency to backend: $e');
+      }
+    }
     final floatsEnabled = prefs.getBool('floats_enabled') ?? true;
     await BackgroundScheduler.scheduleFloats(_selectedHours, floatsEnabled);
     if (!mounted) return;

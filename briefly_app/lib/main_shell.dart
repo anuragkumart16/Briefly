@@ -127,8 +127,8 @@ class _MainShellState extends State<MainShell> {
       context: context,
       barrierDismissible: !info.mandatory,
       builder: (BuildContext context) {
-        return WillPopScope(
-          onWillPop: () async => !info.mandatory,
+        return PopScope(
+          canPop: !info.mandatory,
           child: AlertDialog(
             title: const Text('Update Available'),
             shape: RoundedRectangleBorder(
@@ -199,8 +199,8 @@ class _MainShellState extends State<MainShell> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return WillPopScope(
-          onWillPop: () async => false, // Cannot dismiss download
+        return PopScope(
+          canPop: false, // Cannot dismiss download
           child: AlertDialog(
             title: const Text('Downloading Update'),
             shape: RoundedRectangleBorder(
@@ -975,27 +975,7 @@ class _MainShellState extends State<MainShell> {
                       _onTabTapped(1);
                     },
                     trailing: _floatsEnabled
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(
-                                0xFFFF5B24,
-                              ).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              '8 active',
-                              style: TextStyle(
-                                fontFamily: 'Open Sans',
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFFFF5B24),
-                              ),
-                            ),
-                          )
+                        ? null
                         : Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,

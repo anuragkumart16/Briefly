@@ -867,12 +867,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _formattedTime(_reportHour, _reportMinute),
                       _pickReportTime,
                     ),
-                    const Divider(color: Color(0xFFE5E7EB), height: 1),
-                    _buildActionRow(
-                      'Test report in 1 minute',
-                      const Color(0xFFFF5B24),
-                      _scheduleTestNotification,
-                    ),
                   ]),
                   const SizedBox(height: 20),
 

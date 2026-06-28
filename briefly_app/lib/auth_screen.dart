@@ -403,55 +403,10 @@ class _GoogleGLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size),
-      painter: _GoogleGPainter(),
+    return Image.asset(
+      'assets/google_logo.png',
+      width: size,
+      height: size,
     );
   }
-}
-
-class _GoogleGPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final double cx = size.width / 2;
-    final double cy = size.height / 2;
-    final double r = size.width / 2;
-    final double strokeW = r * 0.36;
-    final rect = Rect.fromCircle(center: Offset(cx, cy), radius: r - strokeW / 2);
-
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeW
-      ..strokeCap = StrokeCap.butt;
-
-    // Red arc
-    paint.color = const Color(0xFFEA4335);
-    canvas.drawArc(rect, _deg(-30), _deg(90), false, paint);
-
-    // Yellow arc
-    paint.color = const Color(0xFFFBBC05);
-    canvas.drawArc(rect, _deg(60), _deg(90), false, paint);
-
-    // Green arc
-    paint.color = const Color(0xFF34A853);
-    canvas.drawArc(rect, _deg(150), _deg(90), false, paint);
-
-    // Blue arc (dominant)
-    paint.color = const Color(0xFF4285F4);
-    canvas.drawArc(rect, _deg(240), _deg(120), false, paint);
-
-    // Blue crossbar
-    final barPaint = Paint()
-      ..color = const Color(0xFF4285F4)
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(
-      Rect.fromLTRB(cx, cy - strokeW / 2, cx + r, cy + strokeW / 2),
-      barPaint,
-    );
-  }
-
-  double _deg(double d) => d * 3.141592653589793 / 180;
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
