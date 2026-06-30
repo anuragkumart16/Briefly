@@ -58,7 +58,7 @@ function getSetReportTime(baseDate: Date, timezone: string, reportHour: number, 
 /**
  * Core helper to compile the daily report via Groq API.
  */
-export async function compileDailyReport(userId: string, timeMin: string, timeMax: string): Promise<any> {
+export async function compileDailyReport(userId: string, timeMin: string, timeMax: string, anchorTime?: Date): Promise<any> {
     // 1. Get user details and settings from the database
     const [user, settings] = await Promise.all([
         prisma.user.findUnique({ where: { id: userId } }),
@@ -81,7 +81,7 @@ export async function compileDailyReport(userId: string, timeMin: string, timeMa
     const reportMinute = settings?.reportMinute ?? 30;
 
     const baseDate = timeMin ? new Date(timeMin) : new Date();
-    const setReportTime = getSetReportTime(baseDate, timezone, reportHour, reportMinute);
+    const setReportTime = anchorTime || getSetReportTime(baseDate, timezone, reportHour, reportMinute);
 
     // 2. Resolve a valid, non-expired Google Access Token
     const accessToken = await getValidGoogleToken(userId);
@@ -351,6 +351,7 @@ const getDailyReport = async (req: Request, res: Response) => {
     const userId = req.params.userId as string;
     const timeMin = req.query.timeMin as string;
     const timeMax = req.query.timeMax as string;
+    const refresh = req.query.refresh === "true";
 
     if (!userId) {
         return ApiResponse(res, 400, "User ID is required");
@@ -361,25 +362,27 @@ const getDailyReport = async (req: Request, res: Response) => {
     }
 
     try {
-        // Try to retrieve cached report for today first
-        const todayReport = await prisma.report.findFirst({
-            where: {
-                userId,
-                createdAt: {
-                    gte: new Date(timeMin),
-                    lte: new Date(timeMax)
-                }
-            },
-            orderBy: { createdAt: "desc" }
-        });
+        if (!refresh) {
+            // Try to retrieve cached report for today first
+            const todayReport = await prisma.report.findFirst({
+                where: {
+                    userId,
+                    createdAt: {
+                        gte: new Date(timeMin),
+                        lte: new Date(timeMax)
+                    }
+                },
+                orderBy: { createdAt: "desc" }
+            });
 
-        if (todayReport) {
-            console.log(`Returning cached report for user ${userId} from database.`);
-            return ApiResponse(res, 200, "Daily report retrieved successfully", todayReport.data);
+            if (todayReport) {
+                console.log(`Returning cached report for user ${userId} from database.`);
+                return ApiResponse(res, 200, "Daily report retrieved successfully", todayReport.data);
+            }
         }
 
-        console.log(`No cached report found. Compiling fresh report for user ${userId}...`);
-        const parsedReport = await compileDailyReport(userId, timeMin, timeMax);
+        console.log(refresh ? `Bypassing cache due to refresh request. Compiling fresh report for user ${userId}...` : `No cached report found. Compiling fresh report for user ${userId}...`);
+        const parsedReport = await compileDailyReport(userId, timeMin, timeMax, refresh ? new Date() : undefined);
 
         // Cache in the database so next fetch gets it instantly
         await prisma.report.create({

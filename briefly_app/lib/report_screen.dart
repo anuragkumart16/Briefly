@@ -110,7 +110,7 @@ class _ReportScreenState extends State<ReportScreen> {
     await _fetchReport();
   }
 
-  Future<void> _fetchReport() async {
+  Future<void> _fetchReport({bool forceRefresh = false}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -135,7 +135,11 @@ class _ReportScreenState extends State<ReportScreen> {
 
       final url = Uri.parse(
         '${AppConfig.backendUrl}/api/v1/users/$userId/report',
-      ).replace(queryParameters: {'timeMin': timeMin, 'timeMax': timeMax});
+      ).replace(queryParameters: {
+        'timeMin': timeMin,
+        'timeMax': timeMax,
+        if (forceRefresh) 'refresh': 'true',
+      });
 
       final response = await http.get(url).timeout(const Duration(seconds: 45));
 
@@ -270,7 +274,7 @@ class _ReportScreenState extends State<ReportScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Color(0xFFFF5B24)),
-            onPressed: _fetchReport,
+            onPressed: () => _fetchReport(forceRefresh: true),
           ),
         ],
       ),
@@ -307,7 +311,7 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: _fetchReport,
+              onPressed: () => _fetchReport(forceRefresh: true),
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(
@@ -331,7 +335,7 @@ class _ReportScreenState extends State<ReportScreen> {
     final List<dynamic> emails = _reportData!['emails'] ?? [];
 
     return RefreshIndicator(
-      onRefresh: _fetchReport,
+      onRefresh: () => _fetchReport(forceRefresh: true),
       color: const Color(0xFFFF5B24),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
