@@ -3,3 +3,4 @@ node_modules/
 dist/
 firebase-service-account.json
 src/config/firebase-service-account.json
+src/send-update-notification.ts

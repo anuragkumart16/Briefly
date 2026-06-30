@@ -97,3 +97,52 @@ curl -X POST http://localhost:PORT/api/v1/update \
     "mandatory": true
   }'
 ```
+
+---
+
+## Step 6: Send Update Notifications to All Users
+
+Once the new build is successfully registered in the database, broadcast a push notification to all active users to inform them about the new version. Clicking this notification will open the app.
+
+### Execute Broadcast Script
+Create a temporary typescript runner `src/send-update-notification.ts` in the `notification_service` directory:
+
+```typescript
+import prisma from "./config/prisma";
+import { sendNotificationToUser } from "./services/fcm.service";
+
+async function main() {
+    const users = await prisma.user.findMany({
+        where: {
+            fcmTokens: {
+                isEmpty: false
+            }
+        },
+        select: {
+            id: true,
+            email: true
+        }
+    });
+
+    for (const user of users) {
+        await sendNotificationToUser(
+            user.id,
+            "New Update Available! 🚀",
+            "Version <VERSION> is now live. Tap to open Briefly and update to get the latest features and bug fixes.",
+            {
+                type: "app_update",
+                click_action: "FLUTTER_NOTIFICATION_CLICK"
+            }
+        );
+    }
+}
+main().finally(() => prisma.$disconnect());
+```
+
+Run the script:
+```bash
+cd notification_service
+npx ts-node src/send-update-notification.ts
+rm src/send-update-notification.ts
+```
+

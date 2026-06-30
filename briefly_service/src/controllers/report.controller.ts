@@ -256,7 +256,20 @@ export async function compileDailyReport(userId: string, timeMin: string, timeMa
         throw new Error("Server configuration error: AI service unavailable");
     }
 
+    const localDateTimeStr = new Date().toLocaleString("en-US", {
+        timeZone: timezone,
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZoneName: 'short'
+    });
+
     const dataLines: string[] = [];
+    dataLines.push(`- Current Date and Time: ${localDateTimeStr}`);
     if (includeFloats)   dataLines.push(`- Floats (Stored wisdom / positive reminders): ${JSON.stringify(floats.map(f => f.text))}`);
     if (includeTasks)    dataLines.push(`- Tasks: ${JSON.stringify(tasks)}`);
     if (includeCalendar) dataLines.push(`- Calendar events: ${JSON.stringify(calendarEvents)}`);
@@ -287,7 +300,8 @@ Rules:
 5. For tasks: always fill the "deadline" field. If there is no deadline, specify 'No deadline'. Include the task's notes/details in the "details" field if they are available.
 6. For calendar: if multiple people are joining, list their names/emails in "attendees". If there are documents/attachments, list them under "documentLinks".
 7. For emails: provide a good summary of each, tell the crux along with who sent it, why they sent it, and list attachment files under "attachments" with their links.
-8. Exclude emails that are newsletters, promotions, or spam.`;
+8. Exclude emails that are newsletters, promotions, or spam.
+9. Use the provided "Current Date and Time" (${localDateTimeStr}) as the current timezone-aware context when interpreting date/time relative expressions (e.g. 'today', 'tomorrow', 'yesterday', 'next week') in the emails, tasks, and calendar events.`;
 
     console.log("Calling Groq API (openai/gpt-oss-120b) to generate report summary...");
 
