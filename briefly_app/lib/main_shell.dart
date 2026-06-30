@@ -8,6 +8,7 @@ import 'config.dart';
 import 'floats_onboarding_screen.dart';
 import 'floats_screen.dart';
 import 'home_screen.dart';
+import 'report_screen.dart';
 import 'settings_screen.dart';
 import 'widgets/app_bottom_nav_bar.dart';
 import 'widgets/app_top_bar.dart';
@@ -110,6 +111,28 @@ class _MainShellState extends State<MainShell> {
       if (mounted) {
         setState(() {
           _selectedIndex = 1;
+        });
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(1);
+        } else {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_pageController.hasClients) {
+              _pageController.jumpToPage(1);
+            }
+          });
+        }
+      }
+    }
+
+    final openReport = prefs.getBool('open_report_from_notification') ?? false;
+    if (openReport) {
+      await prefs.setBool('open_report_from_notification', false);
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ReportScreen()),
+        ).then((_) {
+          HomeBody.refreshCachedReport?.call();
         });
       }
     }
