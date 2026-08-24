@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Arya, Open_Sans } from "next/font/google";
 import "./globals.css";
+import AuthProvider from "./providers";
 
 const arya = Arya({
   weight: ["400", "700"],
@@ -28,7 +29,7 @@ export default function RootLayout({
       lang="en"
       className={`${arya.variable} ${openSans.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col"><AuthProvider>{children}</AuthProvider></body>
     </html>
   );
 }

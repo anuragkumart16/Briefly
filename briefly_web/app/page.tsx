@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 // Sample wisdom items for the Floats interactive preview
 const WISDOM_ITEMS = [
@@ -27,6 +28,8 @@ const WISDOM_ITEMS = [
 ];
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const [view, setView] = useState<'landing' | 'login' | 'dashboard'>('landing');
   const [activeTab, setActiveTab] = useState<'report' | 'floats' | 'settings'>('report');
   const [wisdomIndex, setWisdomIndex] = useState(0);
   const [scheduledTime, setScheduledTime] = useState('07:30 AM');
@@ -37,13 +40,376 @@ export default function Home() {
   const [includeTasks, setIncludeTasks] = useState(true);
   const [includeFloats, setIncludeFloats] = useState(true);
 
+  // Dashboard checklist state
+  const [todoChecked, setTodoChecked] = useState<boolean[]>([]);
+  const [dashWisdomIndex, setDashWisdomIndex] = useState(0);
+
+  // Live report fetching state
+  const [reportData, setReportData] = useState<any>(null);
+  const [isReportLoading, setIsReportLoading] = useState(false);
+  const [reportError, setReportError] = useState('');
+
+  // Fetch live report when authenticated
+  useEffect(() => {
+    if (status === 'authenticated') {
+      setIsReportLoading(true);
+      fetch('/api/report')
+        .then((res) => res.json())
+        .then((resData) => {
+          if (resData.data) {
+            setReportData(resData.data);
+            if (resData.data.tasks) {
+              setTodoChecked(new Array(resData.data.tasks.length).fill(false));
+            }
+          } else if (resData.error) {
+            setReportError(resData.error);
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching live report:', err);
+          setReportError('Failed to connect to Briefly API');
+        })
+        .finally(() => {
+          setIsReportLoading(false);
+        });
+    }
+  }, [status]);
+
+  // Sync view with real session
+  useEffect(() => {
+    if (status === 'authenticated') setView('dashboard');
+    else if (status === 'unauthenticated' && view === 'dashboard') setView('landing');
+  }, [status]);
+
+  // Scroll to top on view change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [view]);
+
   const nextWisdom = () => {
     setWisdomIndex((prev) => (prev + 1) % WISDOM_ITEMS.length);
+  };
+
+  const handleGoogleLogin = () => {
+    signIn('google');
   };
 
   const downloadUrl = "https://github.com/anuragkumart16/Briefly/releases/download/PROD/app-release.apk";
   const repoUrl = "https://github.com/anuragkumart16/Briefly";
 
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Loading state while session is being fetched
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <span className="font-display text-2xl font-bold text-brand">Briefly</span>
+          <svg className="w-6 h-6 animate-spin text-brand" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Login Screen ─────────────────────────────────────────────────────────
+  if (view === 'login') {
+    return (
+      <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center px-4 relative">
+        {/* Background grid */}
+        <div className="absolute inset-0 bg-grid opacity-60 -z-10 pointer-events-none" />
+
+        {/* Card */}
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-zinc-100 p-8 sm:p-10">
+          {/* Logo */}
+          <div className="flex items-center gap-2 mb-8">
+            <button onClick={() => setView('landing')} className="text-zinc-400 hover:text-zinc-600 transition-colors mr-1" aria-label="Back to landing">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span className="font-display text-2xl font-bold tracking-tight text-brand">Briefly</span>
+          </div>
+
+          <h1 className="font-display text-2xl font-bold text-zinc-950 mb-1">Welcome back</h1>
+          <p className="text-zinc-500 text-sm mb-8">Sign in with your Google account to view your daily report</p>
+
+          {/* Google Sign-in */}
+          <button
+            id="google-signin-btn"
+            onClick={handleGoogleLogin}
+            className="w-full flex items-center justify-center gap-3 border border-zinc-200 rounded-2xl py-3 px-4 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-all mb-6"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            <span>Continue with Google</span>
+          </button>
+
+          <p className="text-center text-xs text-zinc-400 mt-6">
+            No account yet?{' '}
+            <a href={downloadUrl} className="text-brand hover:underline font-semibold">Get the Android app</a>
+          </p>
+        </div>
+
+        <p className="mt-6 text-xs text-zinc-400">
+          &copy; {new Date().getFullYear()} Briefly App. Open Source MIT License.
+        </p>
+      </div>
+    );
+  }
+
+  // ─── Dashboard Screen ─────────────────────────────────────────────────────
+  if (view === 'dashboard' || status === 'authenticated') {
+    const userName = session?.user?.name?.split(' ')[0] || 'there';
+    const userEmail = session?.user?.email || '';
+    const userImage = session?.user?.image || null;
+    const userInitial = userEmail ? userEmail[0].toUpperCase() : 'A';
+
+    return (
+      <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans antialiased">
+        <div className="absolute inset-0 bg-grid opacity-40 -z-10 pointer-events-none" />
+
+        {/* Dashboard Navbar */}
+        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-zinc-100 px-4 py-3 sm:px-8">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <span className="font-display text-xl font-bold tracking-tight text-brand">Briefly</span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                {userImage ? (
+                  <img src={userImage} alt={userName} className="w-8 h-8 rounded-full border border-brand/20" referrerPolicy="no-referrer" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center text-brand font-bold text-sm">
+                    {userInitial}
+                  </div>
+                )}
+                <span className="hidden sm:block text-sm font-medium text-zinc-700">{userEmail}</span>
+              </div>
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="text-xs font-semibold text-zinc-500 hover:text-zinc-800 border border-zinc-200 rounded-xl px-3 py-1.5 transition-all hover:border-zinc-300"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Dashboard Content */}
+        <main className="max-w-4xl mx-auto px-4 sm:px-8 py-8 space-y-6">
+
+          {/* Date + Greeting */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">{dateStr}</p>
+              <h1 className="font-display text-2xl sm:text-3xl font-bold text-zinc-950">
+                Good morning, {userName} 👋
+              </h1>
+            </div>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand-light border border-brand/20 rounded-full text-xs font-semibold text-brand">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
+              {isReportLoading ? 'Compiling report with AI...' : 'Live Report Active'}
+            </div>
+          </div>
+
+          {/* Loading Skeleton */}
+          {isReportLoading && (
+            <div className="space-y-6 animate-pulse">
+              <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="h-5 bg-zinc-200 rounded w-1/4" />
+                <div className="h-4 bg-zinc-100 rounded w-3/4" />
+                <div className="h-4 bg-zinc-100 rounded w-1/2" />
+                <div className="grid grid-cols-3 gap-3 pt-2">
+                  <div className="h-16 bg-zinc-100 rounded-2xl" />
+                  <div className="h-16 bg-zinc-100 rounded-2xl" />
+                  <div className="h-16 bg-zinc-100 rounded-2xl" />
+                </div>
+              </div>
+              <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="h-5 bg-zinc-200 rounded w-1/3" />
+                <div className="h-12 bg-zinc-100 rounded-2xl" />
+                <div className="h-12 bg-zinc-100 rounded-2xl" />
+              </div>
+            </div>
+          )}
+
+          {/* Overview Card */}
+          {!isReportLoading && (
+            <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">⚡</span>
+                <h2 className="font-bold text-zinc-950 text-base">Today's Overview</h2>
+              </div>
+              <p className="text-zinc-600 text-sm leading-relaxed">
+                {reportData?.summary || `You have ${(reportData?.emails?.length || 0) + (reportData?.calendar?.length || 0) + (reportData?.tasks?.length || 0)} items requiring attention today.`}
+              </p>
+              <div className="mt-4 grid grid-cols-3 gap-3">
+                <div className="bg-red-50 border border-red-100 rounded-2xl p-3 text-center">
+                  <div className="text-xl font-bold text-red-500">{reportData?.emails?.length ?? 0}</div>
+                  <div className="text-[11px] text-zinc-500 font-medium mt-0.5">Emails</div>
+                </div>
+                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 text-center">
+                  <div className="text-xl font-bold text-blue-500">{reportData?.calendar?.length ?? 0}</div>
+                  <div className="text-[11px] text-zinc-500 font-medium mt-0.5">Events</div>
+                </div>
+                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 text-center">
+                  <div className="text-xl font-bold text-amber-500">{reportData?.tasks?.length ?? 0}</div>
+                  <div className="text-[11px] text-zinc-500 font-medium mt-0.5">Tasks</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Email Digest */}
+          {!isReportLoading && reportData?.emails && reportData.emails.length > 0 && (
+            <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-lg">📧</span>
+                <h2 className="font-bold text-zinc-950 text-base">Email Summaries</h2>
+                <span className="ml-auto text-[11px] bg-red-100 text-red-600 font-bold px-2 py-0.5 rounded-full">{reportData.emails.length} new</span>
+              </div>
+              <div className="divide-y divide-zinc-100 space-y-3">
+                {reportData.emails.map((email: any, idx: number) => (
+                  <div key={email.id || idx} className={idx > 0 ? 'pt-4' : 'pb-1'}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="w-8 h-8 rounded-full bg-brand/10 flex items-center justify-center text-brand font-bold text-sm flex-shrink-0 mt-0.5">
+                        {email.from ? email.from[0].toUpperCase() : 'E'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-sm text-zinc-900 truncate">{email.from}</span>
+                          {email.link && (
+                            <a href={email.link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-brand hover:underline font-semibold ml-2">Open Mail ↗</a>
+                          )}
+                        </div>
+                        <div className="text-xs text-zinc-600 mt-0.5 font-medium">{email.subject}</div>
+                        <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{email.summary || email.crux}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Calendar */}
+          {!isReportLoading && reportData?.calendar && reportData.calendar.length > 0 && (
+            <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-lg">📅</span>
+                <h2 className="font-bold text-zinc-950 text-base">Calendar Schedule</h2>
+                <span className="ml-auto text-[11px] bg-blue-100 text-blue-600 font-bold px-2 py-0.5 rounded-full">{reportData.calendar.length} events</span>
+              </div>
+              <div className="space-y-3">
+                {reportData.calendar.map((event: any, idx: number) => (
+                  <div key={idx} className="flex items-stretch gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className="w-0.5 flex-1 bg-brand/20 rounded-full" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-brand border-2 border-white shadow-sm my-1" />
+                      <div className="w-0.5 flex-1 bg-brand/20 rounded-full" />
+                    </div>
+                    <div className="flex-1 bg-zinc-50 border border-zinc-100 rounded-2xl p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-sm text-zinc-900">{event.title}</span>
+                        <span className="text-[11px] text-brand font-bold bg-brand/10 px-2 py-0.5 rounded-full">{event.time}</span>
+                      </div>
+                      <div className="text-xs text-zinc-500 mt-1">{event.summary || event.location}</div>
+                      {event.attendees && (
+                        <div className="text-xs text-zinc-400 mt-1">With: {event.attendees}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Todo List */}
+          {!isReportLoading && reportData?.tasks && reportData.tasks.length > 0 && (
+            <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-lg">✅</span>
+                <h2 className="font-bold text-zinc-950 text-base">Todo List</h2>
+                <span className="ml-auto text-[11px] bg-amber-100 text-amber-600 font-bold px-2 py-0.5 rounded-full">
+                  {todoChecked.filter(Boolean).length}/{reportData.tasks.length} done
+                </span>
+              </div>
+              <div className="space-y-3">
+                {reportData.tasks.map((task: any, i: number) => (
+                  <label
+                    key={i}
+                    htmlFor={`todo-${i}`}
+                    className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${
+                      todoChecked[i] ? 'bg-zinc-50 border-zinc-100' : 'bg-amber-50/40 border-amber-100'
+                    }`}
+                  >
+                    <input
+                      id={`todo-${i}`}
+                      type="checkbox"
+                      checked={!!todoChecked[i]}
+                      onChange={() => setTodoChecked(prev => prev.map((v, idx) => idx === i ? !v : v))}
+                      className="w-4 h-4 rounded border-zinc-300 accent-[#FF5B24] cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <span className={`text-sm font-medium transition-all ${todoChecked[i] ? 'line-through text-zinc-400' : 'text-zinc-700'}`}>
+                        {task.title}
+                      </span>
+                      {task.deadline && task.deadline !== 'No deadline' && (
+                        <span className="block text-[11px] text-zinc-400 font-normal">Due: {task.deadline}</span>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Floats Wisdom Card */}
+          {!isReportLoading && (
+            <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-6 shadow-sm relative overflow-hidden">
+              <div className="absolute inset-0 dot-pattern opacity-10 pointer-events-none" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-lg">💡</span>
+                  <h2 className="font-bold text-white text-base">Float of the Day</h2>
+                </div>
+                <blockquote className="border-l-2 border-brand pl-4 mb-4">
+                  <p className="text-zinc-200 text-sm leading-relaxed italic">
+                    &ldquo;{reportData?.wisdom || WISDOM_ITEMS[dashWisdomIndex].quote}&rdquo;
+                  </p>
+                  {!reportData?.wisdom && (
+                    <cite className="block text-brand text-xs font-bold tracking-wider uppercase mt-2 not-italic">
+                      — {WISDOM_ITEMS[dashWisdomIndex].author}
+                    </cite>
+                  )}
+                </blockquote>
+                {!reportData?.wisdom && (
+                  <button
+                    onClick={() => setDashWisdomIndex((prev) => (prev + 1) % WISDOM_ITEMS.length)}
+                    className="text-xs font-semibold text-brand hover:text-white border border-brand/30 hover:border-brand rounded-xl px-4 py-2 transition-all"
+                  >
+                    Next Float →
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <p className="text-center text-xs text-zinc-400 pb-4">
+            Generated by Briefly · Powered by Briefly Service & Groq AI
+          </p>
+        </main>
+      </div>
+    );
+  }
+
+  // ─── Landing Page ────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans antialiased selection:bg-brand/10 selection:text-brand flex flex-col">
       {/* Background Grid Pattern */}
@@ -62,6 +428,7 @@ export default function Home() {
             <a href="#how-it-works" className="hover:text-brand transition-colors">How it works</a>
             <a href="#download" className="hover:text-brand transition-colors">Download</a>
             <a href={repoUrl} target="_blank" rel="noopener noreferrer" className="hover:text-brand transition-colors">Source Code</a>
+            <button onClick={() => setView('login')} className="hover:text-brand transition-colors font-semibold">Sign In</button>
           </nav>
           <div className="flex items-center gap-3">
             <a
@@ -98,7 +465,7 @@ export default function Home() {
               Notifications distract you all day. Briefly consolidates your emails, calendars, and todo list items into a single, clean markdown digest delivered exactly when you want it. No cloud servers, no trackers.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto mb-10">
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto mb-10" style={{flexWrap: 'wrap'}}>
               <a
                 href={downloadUrl}
                 className="px-8 py-4 bg-brand hover:bg-brand-hover text-white font-bold rounded-2xl text-center transition-all shadow-md premium-glow flex items-center justify-center gap-2 group"
@@ -119,6 +486,15 @@ export default function Home() {
                 </svg>
                 <span>GitHub Source</span>
               </a>
+              <button
+                onClick={() => setView('login')}
+                className="px-8 py-4 border border-brand/30 hover:border-brand bg-brand-light hover:bg-brand/10 font-bold rounded-2xl text-center text-brand transition-all flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 9a3 3 0 11-6 0 3 3 0 016 0zM6 20a6 6 0 1112 0" />
+                </svg>
+                <span>Sign In</span>
+              </button>
             </div>
 
             {/* Quick specifications */}
